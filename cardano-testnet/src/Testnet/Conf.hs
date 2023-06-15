@@ -1,7 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module Testnet.Conf
-  ( YamlFilePath(..)
+  ( NodeConfigYamlFile(..)
   , Conf(..)
   , mkConf
   ) where
@@ -10,8 +10,8 @@ import           Testnet.Runtime
 
 import qualified Hedgehog.Extras.Test.Base as H
 
-newtype YamlFilePath = YamlFilePath
-  { unYamlFilePath :: FilePath
+newtype NodeConfigYamlFile = NodeConfigYamlFile
+  { unNodeConfigYamlFile :: FilePath
   } deriving (Eq, Show)
 
 newtype Conf = Conf

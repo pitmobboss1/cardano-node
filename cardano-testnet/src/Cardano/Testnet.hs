@@ -20,7 +20,7 @@ module Cardano.Testnet (
   -- * Configuration
   Conf(..),
   TmpAbsolutePath(..),
-  YamlFilePath(..),
+  NodeConfigYamlFile(..),
   mkConf,
   makeLogDir,
   makeSocketDir,
