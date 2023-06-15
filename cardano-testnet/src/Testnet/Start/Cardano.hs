@@ -107,10 +107,10 @@ data ForkPoint
 
 -- | Specify a BFT node (Pre-Babbage era only) or an SPO (Shelley era onwards only)
 data TestnetNodeOptions
-  = BftTestnetNodeOptions [String]
+  = BftTestnetNodeOptions [String] NodeConfigYamlFile
     -- ^ These arguments will be appended to the default set of CLI options when
     -- starting the node.
-  | SpoTestnetNodeOptions
+  | SpoTestnetNodeOptions NodeConfigYamlFile
   deriving (Eq, Show)
 
 extraBftNodeCliArgs :: TestnetNodeOptions -> [String]
