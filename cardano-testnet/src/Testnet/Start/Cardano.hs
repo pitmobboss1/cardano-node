@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
@@ -5,6 +6,7 @@
 module Testnet.Start.Cardano
   ( ForkPoint(..)
   , CardanoTestnetOptions(..)
+  , ParsedTestnetNodeOptions(..)
   , cardanoPoolNodes
   , cardanoBftNodes
   , cardanoNumPoolNodes
@@ -24,7 +26,9 @@ import           Prelude
 import           Cardano.Api hiding (cardanoEra)
 
 import           Control.Monad
+import qualified Data.Aeson as Aeson
 import qualified Data.Aeson as J
+import qualified Data.Aeson.KeyMap as KeyMapAeson
 import           Data.Bifunctor
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.HashMap.Lazy as HM
@@ -75,7 +79,7 @@ import           Testnet.Start.Shelley
 data CardanoTestnetOptions = CardanoTestnetOptions
   { -- | List of node options. Each option will result in a single node being
     -- created.
-    cardanoNodes :: [TestnetNodeOptions]
+    cardanoNodes :: [ParsedTestnetNodeOptions]
   , cardanoEra :: AnyCardanoEra
   , cardanoEpochLength :: Int
   , cardanoSlotLength :: Double
@@ -105,35 +109,52 @@ data ForkPoint
   | AtEpoch Int
   deriving (Show, Eq, Read)
 
--- | Specify a BFT node (Pre-Babbage era only) or an SPO (Shelley era onwards only)
-data TestnetNodeOptions
-  = BftTestnetNodeOptions [String] NodeConfigYamlFile
+data ParsedTestnetNodeOptions
+  = ParsedBftTestnetNodeOptions [String] H.NodeConfigYamlFile
     -- ^ These arguments will be appended to the default set of CLI options when
     -- starting the node.
-  | SpoTestnetNodeOptions NodeConfigYamlFile
+  | ParsedSpoTestnetNodeOptions H.NodeConfigYamlFile
+  deriving (Eq, Show)
+
+
+
+type SingleNodeConfig = KeyMapAeson.KeyMap Aeson.Value
+
+-- | Specify a BFT node (Pre-Babbage era only) or an SPO (Shelley era onwards only)
+data TestnetNodeOptions
+  = BftTestnetNodeOptions [String] SingleNodeConfig
+    -- ^ These arguments will be appended to the default set of CLI options when
+    -- starting the node.
+  | SpoTestnetNodeOptions SingleNodeConfig
   deriving (Eq, Show)
 
 extraBftNodeCliArgs :: TestnetNodeOptions -> [String]
-extraBftNodeCliArgs (BftTestnetNodeOptions args) = args
-extraBftNodeCliArgs SpoTestnetNodeOptions = []
+extraBftNodeCliArgs (BftTestnetNodeOptions args _) = args
+extraBftNodeCliArgs (SpoTestnetNodeOptions _) = []
 
 cardanoPoolNodes :: [TestnetNodeOptions] -> [TestnetNodeOptions]
-cardanoPoolNodes = filter (== SpoTestnetNodeOptions)
+cardanoPoolNodes = filter (\case
+                              SpoTestnetNodeOptions _ -> True
+                              _ -> False
+                          )
 
 cardanoBftNodes :: [TestnetNodeOptions] -> [TestnetNodeOptions]
-cardanoBftNodes = filter (/= SpoTestnetNodeOptions)
+cardanoBftNodes = filter (\case
+                             SpoTestnetNodeOptions _ -> False
+                             _ -> True
+                         )
 
-cardanoNumPoolNodes :: [TestnetNodeOptions] -> Int
+cardanoNumPoolNodes :: [ParsedTestnetNodeOptions] -> Int
 cardanoNumPoolNodes = length . cardanoPoolNodes
 
-cardanoNumBftNodes :: [TestnetNodeOptions] -> Int
+cardanoNumBftNodes :: [ParsedTestnetNodeOptions] -> Int
 cardanoNumBftNodes = length . cardanoBftNodes
 
 cardanoDefaultTestnetNodeOptions :: [TestnetNodeOptions]
 cardanoDefaultTestnetNodeOptions =
-  [ BftTestnetNodeOptions []
-  , BftTestnetNodeOptions []
-  , SpoTestnetNodeOptions
+  [ BftTestnetNodeOptions [] (defaultYamlHardforkViaConfig maxBound)
+  , BftTestnetNodeOptions [] (defaultYamlHardforkViaConfig maxBound)
+  , SpoTestnetNodeOptions (defaultYamlHardforkViaConfig maxBound)
   ]
 
 ifaceAddress :: String

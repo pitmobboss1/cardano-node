@@ -5,12 +5,12 @@ module Parsers.Cardano
 
 import           Prelude
 
-import qualified Data.List as L
 import           Options.Applicative
 import qualified Options.Applicative as OA
 
 import           Cardano.CLI.Common.Parsers hiding (pNetworkId)
 
+import           Testnet.Conf
 import           Testnet.Process.Cli
 import           Testnet.Property.Utils
 import           Testnet.Runtime (readNodeLoggingFormat)
@@ -22,7 +22,7 @@ newtype CardanoOptions = CardanoOptions
 
 optsTestnet :: Parser CardanoTestnetOptions
 optsTestnet = CardanoTestnetOptions
-  <$> pNumBftAndSpoNodes
+  <$> pBftAndSpoNodes
   <*> pCardanoEra
   <*> OA.option auto
       (   OA.long "epoch-length"
@@ -62,25 +62,41 @@ optsTestnet = CardanoTestnetOptions
       <>  OA.value (cardanoNodeLoggingFormat cardanoDefaultTestnetOptions)
       )
 
-pNumBftAndSpoNodes :: Parser [TestnetNodeOptions]
-pNumBftAndSpoNodes =
-  (++)
-    <$> OA.option
-          ((`L.replicate` BftTestnetNodeOptions []) <$> auto)
-          (   OA.long "num-bft-nodes"
-          <>  OA.help "Number of BFT nodes"
-          <>  OA.metavar "COUNT"
-          <>  OA.showDefault
-          <>  OA.value (cardanoNodes cardanoDefaultTestnetOptions)
-          )
-    <*> OA.option
-          ((`L.replicate` SpoTestnetNodeOptions) <$> auto)
-          (   OA.long "num-pool-nodes"
-          <>  OA.help "Number of pool nodes"
-          <>  OA.metavar "COUNT"
-          <>  OA.showDefault
-          <>  OA.value (cardanoNodes cardanoDefaultTestnetOptions)
-          )
+pNodeCommandArgs :: Parser String
+pNodeCommandArgs =
+  OA.strOption
+      (   OA.long "node-args"
+      <>  OA.help "Optional cardano-node arguments"
+      <>  OA.metavar "STRING"
+      <>  OA.showDefault
+      )
+
+
+pBftNode :: Parser ParsedTestnetNodeOptions
+pBftNode =
+  ParsedBftTestnetNodeOptions
+    <$> many pNodeCommandArgs
+    <*> pNodeConfigurationYaml "bft-node-config"
+
+
+pSpoNode :: Parser ParsedTestnetNodeOptions
+pSpoNode = ParsedSpoTestnetNodeOptions <$> pNodeConfigurationYaml "spo-node-config"
+
+pNodeConfigurationYaml :: String -> Parser NodeConfigYamlFile
+pNodeConfigurationYaml arg =
+  NodeConfigYamlFile
+    <$> OA.strOption
+          (mconcat [ OA.long arg
+                   , OA.help "Filepath to the node configuration yaml file"
+                   , OA.metavar "STRING"
+                   , OA.showDefault
+                   ])
+
+
+
+pBftAndSpoNodes :: Parser [ParsedTestnetNodeOptions]
+pBftAndSpoNodes = many $ pBftNode <|> pSpoNode
+
 
 optsCardano :: Parser CardanoOptions
 optsCardano = CardanoOptions <$> optsTestnet
