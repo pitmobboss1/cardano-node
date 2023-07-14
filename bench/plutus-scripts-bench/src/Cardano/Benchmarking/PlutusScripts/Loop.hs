@@ -10,7 +10,7 @@ import           Language.Haskell.TH
 import           Language.Haskell.TH.Syntax
 import           Prelude hiding (pred, ($), (&&), (<), (==))
 
-import           Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV1, Script(..), toScriptInAnyLang, PlutusScriptVersion(..))
+import           Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV2, Script(..), toScriptInAnyLang, PlutusScriptVersion(..))
 import           Cardano.Benchmarking.ScriptAPI
 import qualified Data.ByteString.Short as SBS
 
@@ -25,7 +25,7 @@ scriptName
   = prepareScriptName $(LitE . StringL . loc_module <$> qLocation)
 
 script :: PlutusBenchScript
-script = mkPlutusBenchScript scriptName (toScriptInAnyLang (PlutusScript PlutusScriptV1 scriptSerialized))
+script = mkPlutusBenchScript scriptName (toScriptInAnyLang (PlutusScript PlutusScriptV2 scriptSerialized))
 
 
 {-# INLINABLE mkValidator #-}
@@ -41,5 +41,5 @@ mkValidator _datum redeemer _txContext
 loopScriptShortBs :: SBS.ShortByteString
 loopScriptShortBs = PlutusV2.serialiseCompiledCode $$(PlutusTx.compile [|| mkValidator ||])
 
-scriptSerialized :: PlutusScript PlutusScriptV1
+scriptSerialized :: PlutusScript PlutusScriptV2
 scriptSerialized = PlutusScriptSerialised loopScriptShortBs

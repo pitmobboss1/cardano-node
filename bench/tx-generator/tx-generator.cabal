@@ -26,9 +26,13 @@ common project-config
     buildable: False
 
 common with-library
-  if impl(ghc >= 9)
-    build-depends:      plutus-scripts-bench
-    cpp-options:        -DWITH_LIBRARY
+ if impl(ghc >= 9)
+   build-depends:      plutus-scripts-bench
+                       , plutus-core
+                       , plutus-tx
+                       , plutus-tx-plugin
+                       , plutus-ledger-api
+   cpp-options:        -DWITH_LIBRARY
 
 
 library
@@ -210,6 +214,47 @@ test-suite tx-generator-apitest
                      , filepath
                      , optparse-applicative-fork
                      , cardano-api ^>= 8.2
+                     , cardano-cli
+                     , cardano-node
+                     , transformers
+                     , transformers-except
+                     , tx-generator
+
+test-suite tx-generator-plutustest
+  hs-source-dirs:       test
+  main-is:              PlutusTest.hs
+  type:                 exitcode-stdio-1.0
+  default-language:     Haskell2010
+  ghc-options:          -threaded
+                        -Wall
+                        -rtsopts
+                        "-with-rtsopts=-T"
+
+  build-depends:        base >=4.12 && <5
+                      , aeson
+                      , bytestring
+                      , containers
+                      , filepath
+                      , optparse-applicative-fork
+                      , cardano-api
+                      , cardano-cli
+                      , cardano-node
+                      , plutus-scripts-bench
+                      , plutus-tx
+                      , transformers
+                      , transformers-except
+                      , tx-generator
+                      , vector
+
+  other-modules:        Paths_tx_generator
+  autogen-modules:      Paths_tx_generator
+
+  build-depends:       base >=4.12 && <5
+                     , aeson
+                     , bytestring
+                     , filepath
+                     , optparse-applicative-fork
+                     , cardano-api
                      , cardano-cli
                      , cardano-node
                      , transformers

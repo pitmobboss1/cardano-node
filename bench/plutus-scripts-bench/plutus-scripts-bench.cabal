@@ -84,6 +84,7 @@ library
     , filepath
     , bytestring
     , serialise
+    , th-compat
     , template-haskell
     , text
 

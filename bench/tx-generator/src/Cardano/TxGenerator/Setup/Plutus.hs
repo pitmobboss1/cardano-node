@@ -73,7 +73,7 @@ preExecutePlutusScript
   datum
   redeemer
   = runExcept $ do
-    costModel <- hoistMaybe (TxGenError $ "preExecutePlutusScript: cost model unavailable for: " ++ show scriptLang) $
+    costModel <- hoistMaybe (TxGenError $ "preExecutePlutusScript: cost model unavailable for: " ++ show scriptLang ++ " : " ++ show script ++ " : " ++ show protocolParamCostModels) $
       case script of
         ScriptInAnyLang _ (PlutusScript lang _) ->
           AnyPlutusScriptVersion lang `Map.lookup` protocolParamCostModels
