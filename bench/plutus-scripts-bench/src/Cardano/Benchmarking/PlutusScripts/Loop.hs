@@ -10,11 +10,11 @@ import           Language.Haskell.TH
 import           Language.Haskell.TH.Syntax
 import           Prelude hiding (pred, ($), (&&), (<), (==))
 
-import           Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV2, Script(..), toScriptInAnyLang, PlutusScriptVersion(..))
+import           Cardano.Api.Shelley (PlutusScript (..), PlutusScriptV1, Script(..), toScriptInAnyLang, PlutusScriptVersion(..))
 import           Cardano.Benchmarking.ScriptAPI
 import qualified Data.ByteString.Short as SBS
 
-import qualified PlutusLedgerApi.V2 as PlutusV2
+import qualified PlutusLedgerApi.V1 as PlutusV1
 import           PlutusTx
 import           PlutusTx.Builtins (unsafeDataAsI)
 import           PlutusTx.Prelude hiding (Semigroup (..), unless, (.), (<$>))
@@ -25,7 +25,7 @@ scriptName
   = prepareScriptName $(LitE . StringL . loc_module <$> qLocation)
 
 script :: PlutusBenchScript
-script = mkPlutusBenchScript scriptName (toScriptInAnyLang (PlutusScript PlutusScriptV2 scriptSerialized))
+script = mkPlutusBenchScript scriptName (toScriptInAnyLang (PlutusScript PlutusScriptV1 scriptSerialized))
 
 
 {-# INLINABLE mkValidator #-}
@@ -39,7 +39,7 @@ mkValidator _datum redeemer _txContext
     loop i = if i == 1000000 then () else loop $ pred i
 
 loopScriptShortBs :: SBS.ShortByteString
-loopScriptShortBs = PlutusV2.serialiseCompiledCode $$(PlutusTx.compile [|| mkValidator ||])
+loopScriptShortBs = PlutusV1.serialiseCompiledCode $$(PlutusTx.compile [|| mkValidator ||])
 
-scriptSerialized :: PlutusScript PlutusScriptV2
+scriptSerialized :: PlutusScript PlutusScriptV1
 scriptSerialized = PlutusScriptSerialised loopScriptShortBs
