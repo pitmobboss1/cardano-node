@@ -168,7 +168,7 @@ checkPlutusLoop ::
   -> IO ()
 checkPlutusLoop (Just PlutusOn{..})
   = do
-    script@(ScriptInAnyLang (PlutusScriptLanguage PlutusScriptV2) _)
+    script@(ScriptInAnyLang (PlutusScriptLanguage PlutusScriptV1) _)
         <- either (die . show) pure =<< readPlutusScript plutusScript
     putStrLn $ "--> Read plutus script: " ++ (id ||| id) plutusScript
     protocolParameters <- readProtocolParametersOrDie
