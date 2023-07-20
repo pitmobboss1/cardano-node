@@ -1,3 +1,4 @@
+-- add allow-newer
 -- Custom repository for cardano haskell packages, see CONTRIBUTING for more
 repository cardano-haskell-packages
   url: https://input-output-hk.github.io/cardano-haskell-packages
