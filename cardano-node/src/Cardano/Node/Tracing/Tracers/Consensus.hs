@@ -92,7 +92,7 @@ instance (LogFormatting adr, Show adr) => LogFormatting (ConnectionId adr) where
 
 --------------------------------------------------------------------------------
 --   TraceLabelCreds peer a
---------------------------------------------------------------------------------
+--------------------------------------------------------------------------forHuman------
 
 instance LogFormatting a => LogFormatting (TraceLabelCreds a) where
   forMachine dtal (TraceLabelCreds creds a)  =

@@ -47,6 +47,7 @@ library
                         -Wredundant-constraints
                         -Wmissing-export-lists
                         -Wno-incomplete-patterns
+                        -fprof-auto
 
   if os(linux)
     exposed-modules:    Cardano.Logging.Resources.Linux

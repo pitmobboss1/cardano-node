@@ -84,6 +84,7 @@ library
                         -Widentities
                         -Wredundant-constraints
                         -Wmissing-export-lists
+                        -fprof-auto
 
 executable trace-dispatcher-examples
   import:               project-config

@@ -51,6 +51,11 @@ addDocumentedNamespace  tl (Documented list) =
     (\ dm@DocMsg {} -> dm {dmNamespace = nsReplacePrefix (dmNamespace dm) tl})
     list
 
+-- | Convenience function
+{-# INLINE showT #-}
+showT :: Show a => a -> Text
+showT = pack . show
+
 data DocuResult =
   DocuTracer Builder
   | DocuMetric Builder
