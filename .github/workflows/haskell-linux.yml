@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ghc: ["8.10.7", "9.2.7"]
+        ghc: ["8.10.7", "9.2.8"]
         cabal: ["3.10.1.0"]
         os: [ubuntu-latest]
 
@@ -62,13 +62,13 @@ jobs:
         f+${{ matrix.os }}
         g+${{ (startsWith(github.ref, 'refs/heads/gh-readonly-queue/') && github.run_id) || github.event.pull_request.number || github.ref }}
 
-    - name: Workaround runner image issue
-      # https://github.com/actions/runner-images/issues/7061
-      run: sudo chown -R $USER /usr/local/.ghcup
+    - name: Install Base libs
+      uses: input-output-hk/actions/base@e99ac3b4d5a9e0a1997b86f77c0a7b806856837c
+      with:
+        use-sodium-vrf: false
 
     - name: Install Haskell
-      uses: input-output-hk/setup-haskell@v1
-      id: setup-haskell
+      uses: input-output-hk/actions/haskell@e99ac3b4d5a9e0a1997b86f77c0a7b806856837c
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: ${{ matrix.cabal }}
@@ -78,30 +78,13 @@ jobs:
     - name: "[Bash] Add build script path"
       run: echo "$(pwd)/.github/bin" >> $GITHUB_PATH
 
-    - name: "LINUX: Install build environment (apt-get)"
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libsodium23 libsodium-dev
-        sudo apt-get -y install libsystemd0 libsystemd-dev
-        sudo apt-get -y remove --purge software-properties-common
-        sudo apt-get -y autoremove
-
-    - name: "LINUX: Install build environment (for secp256k1)"
-      run: sudo apt-get -y install autoconf automake libtool
-
-    - name: Install secp256k1
-      uses: input-output-hk/setup-secp256k1@v1
-      with:
-        git-ref: ${{ env.SECP256K1_REF }}
-        cache-version: ${{ env.SECP_CACHE_VERSION }}
-
     - name: Cabal update
       run: cabal update
 
     - name: Configure build
       shell: bash
       run: |
-        cp ".github/workflows/cabal.project.local.ci.$(uname -s)" cabal.project.local
+        cp .github/workflows/cabal.project.local.ci.Linux cabal.project.local
         echo "# cabal.project.local"
         cat cabal.project.local
 
@@ -147,16 +130,21 @@ jobs:
         skip: "${{ vars.BINARY_CACHE_URI != '' }}"
         enable-save: false
 
+    - name: Build core components
+      run: |
+        cabal build cardano-node cardano-cli cardano-node-chairman cardano-submit-api
 
     - name: Build remaining components
-      run: cabal build all
+      run: |
+        cabal build all
 
     - name: Run tests
       env:
         TMPDIR: ${{ runner.temp }}
         TMP: ${{ runner.temp }}
         KEEP_WORKSPACE: 1
-      run: cabal test cardano-testnet cardano-node cardano-node-chairman cardano-submit-api
+      run: |
+        cabal test cardano-testnet cardano-node cardano-node-chairman cardano-submit-api
 
     - name: Tar failed tests workspaces
       if: ${{ failure() }}

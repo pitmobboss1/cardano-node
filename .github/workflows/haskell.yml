@@ -20,24 +20,33 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.sys.os }}
 
     strategy:
       fail-fast: false
       matrix:
-        ghc: ["9.2.7"]
+        ghc: ["9.2.8"]
         cabal: ["3.10.1.0"]
-        os: [macos-latest, windows-latest]
+        sys:
+          - { os: windows-latest, shell: 'C:/msys64/usr/bin/bash.exe -e {0}' }
+          - { os: macos-latest, shell: bash }
+          - { os: ubuntu-latest, shell: bash }
+
+    defaults:
+        run:
+          shell: ${{ matrix.sys.shell }}
 
     env:
+      MSYSTEM: MINGW64
+
+      # do not ever change to $HOME by yourself.
+      CHERE_INVOKING: 1
+
+      # do we want to inherit the path?
+      MSYS2_PATH_TYPE: inherit
+
       # Modify this value to "invalidate" the cabal cache.
-      CABAL_CACHE_VERSION: "2023-07-11"
-
-      # Modify this value to "invalidate" the secp cache.
-      SECP_CACHE_VERSION: "2022-12-30"
-
-      # current ref from: 27.02.2022
-      SECP256K1_REF: ac83be33d0956faf6b7f61a60ab524ef7d6a473a
+      CABAL_CACHE_VERSION: "2023-07-27"
 
     concurrency:
       group: >
@@ -46,7 +55,7 @@ jobs:
         c+${{ github.job }}
         d+${{ matrix.ghc }}
         e+${{ matrix.cabal }}
-        f+${{ matrix.os }}
+        f+${{ matrix.sys.os }}
         g+${{ (startsWith(github.ref, 'refs/heads/gh-readonly-queue/') && github.run_id) || github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
 
@@ -59,52 +68,22 @@ jobs:
         c+${{ github.job }}
         d+${{ matrix.ghc }}
         e+${{ matrix.cabal }}
-        f+${{ matrix.os }}
+        f+${{ matrix.sys.os }}
         g+${{ (startsWith(github.ref, 'refs/heads/gh-readonly-queue/') && github.run_id) || github.event.pull_request.number || github.ref }}
 
+    - name: Install Base libs
+      uses: input-output-hk/actions/base@e99ac3b4d5a9e0a1997b86f77c0a7b806856837c
+      with:
+        use-sodium-vrf: false
+
     - name: Install Haskell
-      uses: input-output-hk/setup-haskell@v1
       id: setup-haskell
+      uses: input-output-hk/actions/haskell@e99ac3b4d5a9e0a1997b86f77c0a7b806856837c
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: ${{ matrix.cabal }}
-        pacman-packages: >
-          mingw-w64-x86_64-pkg-config
-          mingw-w64-x86_64-libsodium
-          mingw-w64-x86_64-openssl
-          base-devel
-          autoconf-wrapper
-          autoconf
-          automake
-          libtool
-          make
 
     - uses: actions/checkout@v3
-
-    - name: "[PowerShell] Add build script path"
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: Add-Content $env:GITHUB_PATH "$(pwd)/.github/bin"
-
-    - name: "[Bash] Add build script path"
-      if: runner.os != 'Windows'
-      run: echo "$(pwd)/.github/bin" >> $GITHUB_PATH
-
-
-    - name: "MAC: Install build environment (brew)"
-      if: runner.os == 'macOS'
-      run: |
-        brew install libsodium
-
-    - name: "MAC: Install build environment (for secp256k1)"
-      if: runner.os == 'macOS'
-      run: brew install autoconf automake libtool
-
-    - name: Install secp256k1
-      uses: input-output-hk/setup-secp256k1@v1
-      with:
-        git-ref: ${{ env.SECP256K1_REF }}
-        cache-version: ${{ env.SECP_CACHE_VERSION }}
 
     - name: Cabal update
       run: cabal update
@@ -118,9 +97,6 @@ jobs:
 
     - name: Build dry run
       run: |
-        # The tests call out to msys2 commands. We generally do not want to mix toolchains, so
-        # we are very deliberate about only adding msys64 to the path where absolutely necessary.
-        ${{ (runner.os == 'Windows' && '$env:PATH=("C:\msys64\mingw64\bin;{0}" -f $env:PATH)') || '' }}
         cabal build all --dry-run --minimize-conflict-set
 
     # For users who fork cardano-node and want to define a writable cache, then can set up their own
@@ -164,16 +140,10 @@ jobs:
 
     - name: Build core components
       run: |
-        # The tests call out to msys2 commands. We generally do not want to mix toolchains, so
-        # we are very deliberate about only adding msys64 to the path where absolutely necessary.
-        ${{ (runner.os == 'Windows' && '$env:PATH=("C:\msys64\mingw64\bin;{0}" -f $env:PATH)') || '' }}
-        cabal build cardano-node cardano-cli cardano-node-chairman cardano-submit-api -j1
+        cabal build cardano-node cardano-cli cardano-node-chairman cardano-submit-api
 
     - name: Build remaining components
       run: |
-        # The tests call out to msys2 commands. We generally do not want to mix toolchains, so
-        # we are very deliberate about only adding msys64 to the path where absolutely necessary.
-        ${{ (runner.os == 'Windows' && '$env:PATH=("C:\msys64\mingw64\bin;{0}" -f $env:PATH)') || '' }}
         cabal build all
 
     - name: Run tests
@@ -182,9 +152,6 @@ jobs:
         TMP: ${{ runner.temp }}
         KEEP_WORKSPACE: 1
       run: |
-        # The tests call out to msys2 commands. We generally do not want to mix toolchains, so
-        # we are very deliberate about only adding msys64 to the path where absolutely necessary.
-        ${{ (runner.os == 'Windows' && '$env:PATH=("C:\msys64\mingw64\bin;{0}" -f $env:PATH)') || '' }}
         cabal test cardano-testnet cardano-node cardano-node-chairman cardano-submit-api
 
     - name: Tar failed tests workspaces
@@ -200,7 +167,7 @@ jobs:
       if: ${{ failure() }}
       uses: actions/upload-artifact@v3
       with:
-        name: failed-test-workspaces-${{ matrix.os }}-ghc${{ matrix.ghc }}-cabal${{ matrix.cabal }}.tgz
+        name: failed-test-workspaces-${{ matrix.sys.os }}-ghc${{ matrix.ghc }}-cabal${{ matrix.cabal }}.tgz
         path: ${{ runner.temp }}/workspaces.tgz
 
     - name: "Tar artifacts"
@@ -224,7 +191,7 @@ jobs:
       if: matrix.ghc == '8.10.7'
       uses: actions/upload-artifact@v1
       with:
-        name: artifacts-${{ matrix.os }}
+        name: artifacts-${{ matrix.sys.os }}
         path: ./artifacts
 
     - name: Delete socket files in chairman tests in preparation for uploading artifacts
@@ -239,7 +206,7 @@ jobs:
       if: ${{ always() }}
       continue-on-error: true
       with:
-        name: chairman-test-artifacts-${{ matrix.os }}-${{ matrix.ghc }}
+        name: chairman-test-artifacts-${{ matrix.sys.os }}-${{ matrix.ghc }}
         path: ${{ runner.temp }}/chairman/
 
     # Uncomment the following back in for debugging. Remember to launch a `pwsh` from
