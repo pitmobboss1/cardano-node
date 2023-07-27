@@ -22,8 +22,6 @@ module Cardano.Logging.Types (
   , nsReplaceInner
   , nsCast
   , nsPrependInner
-  , nsGetPrefix
-  , nsGetInner
   , nsGetComplete
   , MetaTrace(..)
   , DetailLevel(..)
@@ -110,11 +108,12 @@ instance Show (Namespace a) where
   show (Namespace nsPrefix' nsInner') =
     unpack $ intercalate (singleton '.') (nsPrefix' ++ nsInner')
 
-nsReplacePrefix :: Namespace a -> [Text] -> Namespace a
-nsReplacePrefix (Namespace _ i) tl =  Namespace tl i
+nsReplacePrefix :: [Text] -> Namespace a -> Namespace a
+nsReplacePrefix o (Namespace _ i) =  Namespace o i
 
-nsReplaceInner :: Namespace a -> [Text] -> Namespace a
-nsReplaceInner (Namespace o _) =  Namespace o
+nsReplaceInner :: [Text] -> Namespace a -> Namespace a
+nsReplaceInner i (Namespace o _) =  Namespace o i
+
 
 nsPrependInner :: Text -> Namespace a -> Namespace b
 nsPrependInner t (Namespace o i) =  Namespace o (t : i)
@@ -122,16 +121,9 @@ nsPrependInner t (Namespace o i) =  Namespace o (t : i)
 nsCast :: Namespace a -> Namespace b
 nsCast (Namespace o i) =  Namespace o i
 
-nsGetInner :: Namespace a -> [Text]
-nsGetInner = nsInner
-
-nsGetPrefix :: Namespace a -> [Text]
-nsGetPrefix = nsPrefix
-
 nsGetComplete :: Namespace a -> [Text]
 nsGetComplete (Namespace [] i) = i
 nsGetComplete (Namespace o i)  = o ++ i
-
 
 -- | Every message needs this to define how to represent itself
 class LogFormatting a where

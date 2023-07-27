@@ -46,9 +46,9 @@ import           Trace.Forward.Utils.DataPoint (DataPoint (..))
 
 -- | Convenience function for adding a namespace prefix to a documented
 addDocumentedNamespace  :: [Text] -> Documented a -> Documented a
-addDocumentedNamespace  tl (Documented list) =
+addDocumentedNamespace  out (Documented list) =
   Documented $ map
-    (\ dm@DocMsg {} -> dm {dmNamespace = nsReplacePrefix (dmNamespace dm) tl})
+    (\ dm@DocMsg {} -> dm {dmNamespace = nsReplacePrefix out (dmNamespace dm)})
     list
 
 -- | Convenience function
