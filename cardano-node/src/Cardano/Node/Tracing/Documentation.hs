@@ -654,6 +654,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [peerSelectionTr]
     peerSelectionTrDoc <- documentTracer (peerSelectionTr ::
       Trace IO (TracePeerSelection Socket.SockAddr))
+    let peerSelectionNS = map (nsGetComplete . nsReplacePrefix
+                                  ["Net", "PeerSelection", "Selection"])
+                               (allNamespaces :: [Namespace
+                                          (TracePeerSelection Socket.SockAddr)])
 
     debugPeerSelectionTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -661,6 +665,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [debugPeerSelectionTr]
     debugPeerSelectionTrDoc <- documentTracer (debugPeerSelectionTr ::
       Trace IO (DebugPeerSelection Socket.SockAddr))
+    let debugPeerSelectionNS = map (nsGetComplete . nsReplacePrefix
+                                  ["Net", "PeerSelection", "Initiator"])
+                               (allNamespaces :: [Namespace
+                                          (DebugPeerSelection Socket.SockAddr)])
 
     debugPeerSelectionResponderTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -668,6 +676,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [debugPeerSelectionResponderTr]
     debugPeerSelectionResponderTrDoc <- documentTracer (debugPeerSelectionResponderTr ::
       Trace IO (DebugPeerSelection Socket.SockAddr))
+    let debugPeerSelectionResponderNS = map (nsGetComplete . nsReplacePrefix
+                                  ["Net", "PeerSelection", "Responder"])
+                               (allNamespaces :: [Namespace
+                                          (DebugPeerSelection Socket.SockAddr)])
 
     peerSelectionCountersTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -675,6 +687,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [peerSelectionCountersTr]
     peerSelectionCountersTrDoc <- documentTracer (peerSelectionCountersTr ::
       Trace IO PeerSelectionCounters)
+    let peerSelectionCountersNS = map (nsGetComplete . nsReplacePrefix
+                                        ["Net", "PeerSelection", "Counters"])
+                                      (allNamespaces :: [Namespace
+                                        PeerSelectionCounters])
 
     peerSelectionActionsTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -682,6 +698,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [peerSelectionActionsTr]
     peerSelectionActionsTrDoc <- documentTracer (peerSelectionActionsTr ::
       Trace IO (PeerSelectionActionsTrace Socket.SockAddr LocalAddress))
+    let peerSelectionActionsNS = map (nsGetComplete . nsReplacePrefix
+                                  ["Net", "PeerSelection", "Actions"])
+                               (allNamespaces :: [Namespace
+                                 (PeerSelectionActionsTrace Socket.SockAddr LocalAddress)])
 
     connectionManagerTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -692,14 +712,26 @@ docTracers configFileName outputFileName _ _ _ = do
         (ConnectionManagerTrace
           Socket.SockAddr
           (ConnectionHandlerTrace UnversionedProtocol UnversionedProtocolData)))
+    let connectionManagerNS = map (nsGetComplete . nsReplacePrefix
+                                    ["Net", "ConnectionManager", "Remote"])
+                                  (allNamespaces :: [Namespace
+                                    (ConnectionManagerTrace
+                                    Socket.SockAddr
+                                      (ConnectionHandlerTrace
+                                        UnversionedProtocol
+                                        UnversionedProtocolData))])
 
     connectionManagerTransitionsTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
-      ["Net", "ConnectionManager", "Remote"]
+      ["Net", "ConnectionManager", "Transition"]
     configureTracers configReflection trConfig [connectionManagerTransitionsTr]
     connectionManagerTransitionsTrDoc <- documentTracer (connectionManagerTransitionsTr ::
       Trace IO (ConnectionManager.AbstractTransitionTrace Socket.SockAddr))
-
+    let connectionManagerTransitionsNS = map (nsGetComplete . nsReplacePrefix
+                                                ["Net", "ConnectionManager", "Transition"])
+                                            (allNamespaces :: [Namespace
+                                                (ConnectionManager.AbstractTransitionTrace
+                                                Socket.SockAddr)])
 
     serverTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -707,6 +739,9 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [serverTr]
     serverTrDoc <- documentTracer (serverTr ::
       Trace IO (ServerTrace Socket.SockAddr))
+    let serverNS = map (nsGetComplete . nsReplacePrefix
+                         ["Net", "Server", "Remote"])
+                       (allNamespaces :: [Namespace (ServerTrace Socket.SockAddr)])
 
     inboundGovernorTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -714,6 +749,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [inboundGovernorTr]
     inboundGovernorTrDoc <- documentTracer (inboundGovernorTr ::
       Trace IO (InboundGovernorTrace Socket.SockAddr))
+    let inboundGovernorNS = map (nsGetComplete . nsReplacePrefix
+                                  ["Net", "InboundGovernor", "Remote"])
+                                (allNamespaces :: [Namespace
+                                  (InboundGovernorTrace Socket.SockAddr)])
 
     inboundGovernorTransitionsTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -721,6 +760,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [inboundGovernorTransitionsTr]
     inboundGovernorTransitionsTrDoc <- documentTracer (inboundGovernorTransitionsTr ::
        Trace IO (InboundGovernor.RemoteTransitionTrace Socket.SockAddr))
+    let inboundGovernorTransitionsNS = map (nsGetComplete . nsReplacePrefix
+                                      ["Net", "InboundGovernor", "Remote", "Transition"])
+                                           (allNamespaces :: [Namespace
+                                      (InboundGovernor.RemoteTransitionTrace Socket.SockAddr)])
 
     localConnectionManagerTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -733,6 +776,14 @@ docTracers configFileName outputFileName _ _ _ = do
           (ConnectionHandlerTrace
             UnversionedProtocol
             UnversionedProtocolData)))
+    let localConnectionManagerNS = map (nsGetComplete . nsReplacePrefix
+                                         ["Net", "ConnectionManager", "Local"])
+                                       (allNamespaces :: [Namespace
+                                       (ConnectionManagerTrace
+                                          Socket.SockAddr
+                                          (ConnectionHandlerTrace
+                                            UnversionedProtocol
+                                            UnversionedProtocolData))])
 
     localServerTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -740,6 +791,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [localServerTr]
     localServerTrDoc <- documentTracer (localServerTr ::
       Trace IO (ServerTrace LocalAddress))
+    let localServerNS = map (nsGetComplete . nsReplacePrefix
+                              ["Net", "Server", "Local"])
+                            (allNamespaces :: [Namespace
+                              (ServerTrace LocalAddress)])
 
     localInboundGovernorTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -747,6 +802,11 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [localInboundGovernorTr]
     localInboundGovernorTrDoc <- documentTracer (localInboundGovernorTr ::
       Trace IO (InboundGovernorTrace LocalAddress))
+    let localInboundGovernorNS = map (nsGetComplete . nsReplacePrefix
+                                        ["Net", "InboundGovernor", "Local"])
+                                     (allNamespaces :: [Namespace
+                                        (InboundGovernorTrace LocalAddress)])
+
 
 -- -- DiffusionTracersExtra nonP2P
 
@@ -756,6 +816,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtIpSubscriptionTr]
     dtIpSubscriptionTrDoc <- documentTracer (dtIpSubscriptionTr ::
       Trace IO (WithIPList (SubscriptionTrace Socket.SockAddr)))
+    let dtIpSubscriptionNS = map (nsGetComplete . nsReplacePrefix
+                                   ["Net", "Subscription", "IP"])
+                                 (allNamespaces :: [Namespace
+                                   (SubscriptionTrace Socket.SockAddr)])
 
     dtDnsSubscriptionTr  <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -763,6 +827,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtDnsSubscriptionTr]
     dtDnsSubscriptionTrDoc <- documentTracer (dtDnsSubscriptionTr ::
       Trace IO (WithDomainName (SubscriptionTrace Socket.SockAddr)))
+    let dtDnsSubscriptionNS = map (nsGetComplete . nsReplacePrefix
+                                    ["Net", "Subscription", "DNS"])
+                                  (allNamespaces :: [Namespace
+                                    (WithDomainName (SubscriptionTrace Socket.SockAddr))])
 
     dtDnsResolverTr  <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -770,6 +838,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtDnsResolverTr]
     dtDnsResolverTrDoc <- documentTracer (dtDnsResolverTr ::
       Trace IO (WithDomainName DnsTrace))
+    let dtDnsResolverNS = map (nsGetComplete . nsReplacePrefix
+                                ["Net", "DNSResolver"])
+                              (allNamespaces :: [Namespace
+                                (WithDomainName DnsTrace)])
 
     dtErrorPolicyTr  <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -777,6 +849,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtErrorPolicyTr]
     dtErrorPolicyTrDoc <- documentTracer (dtErrorPolicyTr ::
       Trace IO (WithAddr Socket.SockAddr ErrorPolicyTrace))
+    let dtErrorPolicyNS = map (nsGetComplete . nsReplacePrefix
+                                ["Net", "ErrorPolicy", "Remote"])
+                              (allNamespaces :: [Namespace
+                                 (WithAddr Socket.SockAddr ErrorPolicyTrace)])
 
     dtLocalErrorPolicyTr <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -784,6 +860,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtLocalErrorPolicyTr]
     dtLocalErrorPolicyTrDoc <- documentTracer (dtLocalErrorPolicyTr ::
       Trace IO (WithAddr LocalAddress ErrorPolicyTrace))
+    let dtLocalErrorPolicyNS = map (nsGetComplete . nsReplacePrefix
+                                     ["Net", "ErrorPolicy", "Local"])
+                                   (allNamespaces :: [Namespace
+                                     (WithAddr LocalAddress ErrorPolicyTrace)])
 
     dtAcceptPolicyTr    <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -791,8 +871,12 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtAcceptPolicyTr]
     dtAcceptPolicyTrDoc <- documentTracer (dtAcceptPolicyTr ::
       Trace IO NtN.AcceptConnectionsPolicyTrace)
+    let dtAcceptPolicyNS = map (nsGetComplete . nsReplacePrefix
+                                 ["Net", "AcceptPolicy"])
+                               (allNamespaces :: [Namespace
+                                  NtN.AcceptConnectionsPolicyTrace])
 
-    let allNamespaces' :: [[T.Text]] =
+    let _allNamespaces' :: [[T.Text]] =
                 stateNS
              <> peersNS
              <> resourcesNS
@@ -836,29 +920,29 @@ docTracers configFileName outputFileName _ _ _ = do
              <> dtLedgerPeersNS
 
 -- DiffusionTracersExtra P2P
---             <> localRootPeersNS
---             <> publicRootPeersNS
---             <> peerSelectionNS
---             <> debugPeerSelectionNS
---             <> debugPeerSelectionResponderNS
---             <> peerSelectionCountersNS
---             <> peerSelectionActionsNS
---             <> connectionManagerNS
---             <> connectionManagerNSansitionsNS
---             <> serverNS
---             <> inboundGovernorNS
---             <> inboundGovernorNSansitionsNS
---             <> localConnectionManagerNS
---             <> localServerNS
---             <> localInboundGovernorNS
--- -- DiffusionTracersExtra nonP2P
---             <> dtIpSubscriptionNS
---             <> dtDnsSubscriptionNS
---             <> dtDnsResolverNS
---             <> dtErrorPolicyNS
---             <> dtLocalErrorPolicyNS
---             <> dtAcceptPolicyNS
+            <> localRootPeersNS
+            <> publicRootPeersNS
+            <> peerSelectionNS
+            <> debugPeerSelectionNS
+            <> debugPeerSelectionResponderNS
+            <> peerSelectionCountersNS
+            <> peerSelectionActionsNS
+            <> connectionManagerNS
+            <> connectionManagerTransitionsNS
+            <> serverNS
+            <> inboundGovernorNS
+            <> inboundGovernorTransitionsNS
+            <> localConnectionManagerNS
+            <> localServerNS
+            <> localInboundGovernorNS
 
+-- DiffusionTracersExtra nonP2P
+            <> dtIpSubscriptionNS
+            <> dtDnsSubscriptionNS
+            <> dtDnsResolverNS
+            <> dtErrorPolicyNS
+            <> dtLocalErrorPolicyNS
+            <> dtAcceptPolicyNS
 
     let bl =   nodeInfoDpDoc
             <> nodeStartupInfoDpDoc
