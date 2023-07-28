@@ -391,6 +391,9 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [forgeTr]
     forgeTrDoc <- documentTracer (forgeTr ::
       Trace IO (ForgeTracerType blk))
+    let forgeNS = map (nsGetComplete . nsReplacePrefix ["Forge", "Loop"])
+                        (allNamespaces :: [Namespace (ForgeTracerType blk)])
+
 
     -- TODO YUP
     -- forgeTr' <-  mkCardanoTracer'
@@ -407,6 +410,8 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [blockchainTimeTr]
     blockchainTimeTrDoc <- documentTracer (blockchainTimeTr ::
       Trace IO (TraceBlockchainTimeEvent RelativeTime))
+    let blockchainTimeNS = map (nsGetComplete . nsReplacePrefix  ["BlockchainTime"])
+                        (allNamespaces :: [Namespace (TraceBlockchainTimeEvent RelativeTime)])
 
 -- Node to client
 
@@ -416,6 +421,8 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [keepAliveClientTr]
     keepAliveClientTrDoc <- documentTracer (keepAliveClientTr ::
       Trace IO (TraceKeepAliveClient peer))
+    let keepAliveClientNS = map (nsGetComplete . nsReplacePrefix ["Net"])
+                                (allNamespaces :: [Namespace  (TraceKeepAliveClient peer)])
 
     chainSyncTr <- mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -425,6 +432,10 @@ docTracers configFileName outputFileName _ _ _ = do
       Trace IO
         (BlockFetch.TraceLabelPeer peer (TraceSendRecv
           (ChainSync (Header blk) (Point blk) (Tip blk)))))
+    let chainSyncNS = map (nsGetComplete . nsReplacePrefix ["ChainSync", "Local"])
+                          (allNamespaces :: [Namespace
+                            (BlockFetch.TraceLabelPeer peer (TraceSendRecv
+                              (ChainSync (Header blk) (Point blk) (Tip blk))))])
 
     txMonitorTr <-
       mkCardanoTracer
@@ -438,6 +449,13 @@ docTracers configFileName outputFileName _ _ _ = do
            (TraceSendRecv
               (LTM.LocalTxMonitor
                  (GenTxId blk) (GenTx blk) SlotNo))))
+    let txMonitorNS = map (nsGetComplete . nsReplacePrefix  ["TxSubmission", "MonitorClient"])
+                          (allNamespaces :: [Namespace
+                                (BlockFetch.TraceLabelPeer
+                                    peer
+                                    (TraceSendRecv
+                                        (LTM.LocalTxMonitor
+                                          (GenTxId blk) (GenTx blk) SlotNo)))])
 
     txSubmissionTr  <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -450,16 +468,28 @@ docTracers configFileName outputFileName _ _ _ = do
             (TraceSendRecv
                (LTS.LocalTxSubmission
                   (GenTx blk) (ApplyTxErr blk)))))
+    let txSubmissionNS = map (nsGetComplete . nsReplacePrefix ["TxSubmission", "Local"])
+                             (allNamespaces :: [Namespace
+                                (BlockFetch.TraceLabelPeer
+                                  peer
+                                  (TraceSendRecv
+                                    (LTS.LocalTxSubmission
+                                        (GenTx blk) (ApplyTxErr blk))))])
 
     stateQueryTr  <-  mkCardanoTracer
-                trBase trForward mbTrEKG
-               ["StateQueryServer"]
+                        trBase trForward mbTrEKG
+                       ["StateQueryServer"]
     configureTracers configReflection trConfig [stateQueryTr]
     stateQueryTrDoc <- documentTracer (stateQueryTr ::
       Trace IO
             (BlockFetch.TraceLabelPeer peer
              (TraceSendRecv
                (LocalStateQuery blk (Point blk) (Query blk)))))
+    let stateQueryNS = map (nsGetComplete . nsReplacePrefix ["StateQueryServer"])
+                           (allNamespaces :: [Namespace
+                                (BlockFetch.TraceLabelPeer peer
+                                  (TraceSendRecv
+                                    (LocalStateQuery blk (Point blk) (Query blk))))])
 
 -- Node to Node
 
@@ -469,7 +499,11 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [chainSyncNodeTr]
     chainSyncNodeTrDoc <- documentTracer (chainSyncNodeTr ::
       Trace IO (BlockFetch.TraceLabelPeer peer (TraceSendRecv
-          (ChainSync (Header blk) (Point blk) (Tip blk)))))
+               (ChainSync (Header blk) (Point blk) (Tip blk)))))
+    let chainSyncNodeNS = map (nsGetComplete . nsReplacePrefix ["ChainSync", "Remote"])
+                              (allNamespaces :: [Namespace
+                                (BlockFetch.TraceLabelPeer peer (TraceSendRecv
+                                  (ChainSync (Header blk) (Point blk) (Tip blk))))])
 
     chainSyncSerialisedTr <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -478,6 +512,11 @@ docTracers configFileName outputFileName _ _ _ = do
     chainSyncSerialisedTrDoc <- documentTracer (chainSyncSerialisedTr ::
       Trace IO (BlockFetch.TraceLabelPeer peer (TraceSendRecv
             (ChainSync (Header blk) (Point blk) (Tip blk)))))
+    let chainSyncSerialisedNS = map (nsGetComplete . nsReplacePrefix
+                                        ["ChainSync", "Remote", "Serialised"])
+                             (allNamespaces :: [Namespace
+                                (BlockFetch.TraceLabelPeer peer (TraceSendRecv
+                                  (ChainSync (Header blk) (Point blk) (Tip blk))))])
 
     blockFetchTr  <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -488,6 +527,11 @@ docTracers configFileName outputFileName _ _ _ = do
             (BlockFetch.TraceLabelPeer peer
              (TraceSendRecv
                (BlockFetch blk (Point blk)))))
+    let blockFetchNS = map (nsGetComplete . nsReplacePrefix ["BlockFetch", "Remote"])
+                             (allNamespaces :: [Namespace
+                                 (BlockFetch.TraceLabelPeer peer
+                                    (TraceSendRecv
+                                      (BlockFetch blk (Point blk))))])
 
     blockFetchSerialisedTr <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -508,6 +552,12 @@ docTracers configFileName outputFileName _ _ _ = do
         (BlockFetch.TraceLabelPeer peer
           (TraceSendRecv
             (TxSubmission2 (GenTxId blk) (GenTx blk)))))
+    let txSubmission2NS = map (nsGetComplete . nsReplacePrefix
+                                        ["TxSubmission", "Remote"])
+                             (allNamespaces :: [Namespace
+                                 (BlockFetch.TraceLabelPeer peer
+                                    (TraceSendRecv
+                                      (TxSubmission2 (GenTxId blk) (GenTx blk))))])
 
 -- Diffusion
     dtMuxTr   <-  mkCardanoTracer
@@ -516,6 +566,9 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtMuxTr]
     dtMuxTrDoc <- documentTracer (dtMuxTr ::
       Trace IO (WithMuxBearer (ConnectionId RemoteAddress) MuxTrace))
+    let dtMuxNS = map (nsGetComplete . nsReplacePrefix ["Net", "Mux", "Remote"])
+                             (allNamespaces :: [Namespace
+                                 (WithMuxBearer (ConnectionId RemoteAddress) MuxTrace)])
 
     dtLocalMuxTr   <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -523,6 +576,9 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtLocalMuxTr]
     dtLocalMuxTrDoc <- documentTracer (dtLocalMuxTr ::
       Trace IO (WithMuxBearer (ConnectionId LocalAddress) MuxTrace))
+    let dtLocalMuxNS = map (nsGetComplete . nsReplacePrefix ["Net", "Mux", "Local"])
+                             (allNamespaces :: [Namespace
+                                 (WithMuxBearer (ConnectionId LocalAddress) MuxTrace)])
 
     dtHandshakeTr   <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -530,6 +586,10 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtHandshakeTr]
     dtHandshakeTrDoc <- documentTracer (dtHandshakeTr ::
       Trace IO (NtN.HandshakeTr NtN.RemoteAddress NtN.NodeToNodeVersion))
+    let dtHandshakeNS = map (nsGetComplete . nsReplacePrefix
+                                ["Net", "Handshake", "Remote"])
+                            (allNamespaces :: [Namespace
+                              (NtN.HandshakeTr NtN.RemoteAddress NtN.NodeToNodeVersion)])
 
     dtLocalHandshakeTr  <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -538,6 +598,11 @@ docTracers configFileName outputFileName _ _ _ = do
     dtLocalHandshakeTrDoc <- documentTracer (dtLocalHandshakeTr ::
       Trace IO
         (NtC.HandshakeTr LocalAddress NtC.NodeToClientVersion))
+    let dtLocalHandshakeNS = map (nsGetComplete . nsReplacePrefix
+                                   ["Net", "Handshake", "Local"])
+                                 (allNamespaces :: [Namespace
+                                   (NtC.HandshakeTr LocalAddress
+                                      NtC.NodeToClientVersion)])
 
     dtDiffusionInitializationTr   <-  mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -545,6 +610,11 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtDiffusionInitializationTr]
     dtDiffusionInitializationTrDoc <- documentTracer (dtDiffusionInitializationTr ::
       Trace IO (Diffusion.DiffusionTracer Socket.SockAddr LocalAddress))
+    let dtDiffusionInitializationNS = map (nsGetComplete . nsReplacePrefix
+                                            ["Startup", "DiffusionInit"])
+                                          (allNamespaces :: [Namespace
+                                            (Diffusion.DiffusionTracer Socket.SockAddr
+                                                LocalAddress)])
 
     dtLedgerPeersTr  <- mkCardanoTracer
                 trBase trForward mbTrEKG
@@ -552,15 +622,21 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [dtLedgerPeersTr]
     dtLedgerPeersTrDoc <- documentTracer (dtLedgerPeersTr ::
       Trace IO TraceLedgerPeers)
+    let dtLedgerPeersNS = map (nsGetComplete . nsReplacePrefix
+                               ["Net", "Peers", "Ledger"])
+                               (allNamespaces :: [Namespace TraceLedgerPeers])
 
 -- DiffusionTracersExtra P2P
-
     localRootPeersTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
       ["Net", "Peers", "LocalRoot"]
     configureTracers configReflection trConfig [localRootPeersTr]
     localRootPeersTrDoc <- documentTracer (localRootPeersTr ::
       Trace IO (TraceLocalRootPeers RemoteAddress SomeException))
+    let localRootPeersNS = map (nsGetComplete . nsReplacePrefix
+                               ["Net", "Peers", "LocalRoot"])
+                               (allNamespaces :: [Namespace
+                                 (TraceLocalRootPeers RemoteAddress SomeException)])
 
     publicRootPeersTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -568,6 +644,9 @@ docTracers configFileName outputFileName _ _ _ = do
     configureTracers configReflection trConfig [publicRootPeersTr]
     publicRootPeersTrDoc <- documentTracer (publicRootPeersTr ::
       Trace IO TracePublicRootPeers)
+    let publicRootPeersNS = map (nsGetComplete . nsReplacePrefix
+                                  ["Net", "Peers", "PublicRoot"])
+                               (allNamespaces :: [Namespace TracePublicRootPeers])
 
     peerSelectionTr  <-  mkCardanoTracer
       trBase trForward mbTrEKG
@@ -714,48 +793,49 @@ docTracers configFileName outputFileName _ _ _ = do
       Trace IO NtN.AcceptConnectionsPolicyTrace)
 
     let allNamespaces' :: [[T.Text]] =
-               stateNS
+                stateNS
              <> peersNS
              <> resourcesNS
              <> startupNS
              <> shutdownNS
              <> chainDBNS
              <> replayBlockNS
--- -- Consensus
+-- Consensus
              <> chainSyncClientNS
              <> chainSyncServerHeaderNS
              <> chainSyncServerBlockNS
              <> blockFetchDecisionNS
              <> blockFetchClientNS
              <> blockFetchServerNS
---             <> forgeKESInfoNS
---             <> txInboundNS
---             <> txOutboundNS
---             <> localTxSubmissionServerNS
---             <> mempoolNS
---             <> forgeNS
--- --            <> forgeThreadStatsNS
---             <> blockchainTimeNS
--- -- NodeToClient
---             <> keepAliveClientNS
---             <> chainSyncNS
---             <> txMonitorNS
---             <> txSubmissionNS
---             <> stateQueryNS
--- -- Node to Node
---             <> chainSyncNodeNS
---             <> chainSyncSerialisedNS
---             <> blockFetchNS
---             <> blockFetchSerialisedNS
---             <> txSubmission2NS
--- -- Diffusion
---             <> dtMuxNS
---             <> dtLocalMuxNS
---             <> dtHandshakeNS
---             <> dtLocalHandshakeNS
---             <> dtDiffusionInitializationNS
---             <> dtLedgerPeersNS
--- -- DiffusionNSacersExNSa P2P
+             <> forgeKESInfoNS
+             <> txInboundNS
+             <> txOutboundNS
+             <> localTxSubmissionServerNS
+             <> mempoolNS
+             <> forgeNS
+--            <> forgeThreadStatsNS
+             <> blockchainTimeNS
+-- NodeToClient
+             <> keepAliveClientNS
+             <> chainSyncNS
+             <> txMonitorNS
+             <> txSubmissionNS
+             <> stateQueryNS
+-- Node to Node
+             <> chainSyncNodeNS
+             <> chainSyncSerialisedNS
+             <> blockFetchNS
+             <> blockFetchSerialisedNS
+             <> txSubmission2NS
+-- Diffusion
+             <> dtMuxNS
+             <> dtLocalMuxNS
+             <> dtHandshakeNS
+             <> dtLocalHandshakeNS
+             <> dtDiffusionInitializationNS
+             <> dtLedgerPeersNS
+
+-- DiffusionTracersExtra P2P
 --             <> localRootPeersNS
 --             <> publicRootPeersNS
 --             <> peerSelectionNS
@@ -771,7 +851,7 @@ docTracers configFileName outputFileName _ _ _ = do
 --             <> localConnectionManagerNS
 --             <> localServerNS
 --             <> localInboundGovernorNS
--- -- DiffusionNSacersExNSa nonP2P
+-- -- DiffusionTracersExtra nonP2P
 --             <> dtIpSubscriptionNS
 --             <> dtDnsSubscriptionNS
 --             <> dtDnsResolverNS
