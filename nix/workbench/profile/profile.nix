@@ -104,6 +104,16 @@ let
             inherit runJq;
           })
         healthcheck-service;
+
+      inherit
+        (pkgs.callPackage
+          ../service/ssh.nix
+          {
+            inherit backend profile nodeSpecs;
+            inherit runJq;
+          })
+        ssh-service;
+
     };
 
   profile-names-json =
@@ -147,6 +157,7 @@ let
             generator-service
             tracer-service
             healthcheck-service
+            ssh-service
           ;
         in
           pkgs.runCommand "workbench-profile-${profileName}"
@@ -185,12 +196,20 @@ let
                 { name                 = "healthcheck";
                   start                = start.JSON;
                 };
+              sshService =
+                with ssh-service;
+                __toJSON
+                { name                 = "ssh";
+                  start                = start.JSON;
+                  config               = config.JSON;
+                };
               passAsFile =
                 [
                   "nodeServices"
                   "generatorService"
                   "tracerService"
                   "healthcheckService"
+                  "sshService"
                   "topologyJson"
                   "topologyDot"
                 ];
@@ -205,6 +224,7 @@ let
             cp    $generatorServicePath         $out/generator-service.json
             cp    $tracerServicePath            $out/tracer-service.json
             cp    $healthcheckServicePath       $out/healthcheck-service.json
+            cp    $sshServicePath               $out/ssh-service.json
             ''
           //
           (
@@ -217,7 +237,7 @@ let
               topology.files = topologyFiles;
               node-specs = {JSON = nodeSpecsJson; value = nodeSpecs;};
               genesis.files = genesisFiles;
-              inherit node-services generator-service tracer-service healthcheck-service;
+              inherit node-services generator-service tracer-service healthcheck-service ssh-service;
             }
           )
   ;

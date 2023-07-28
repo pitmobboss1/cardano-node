@@ -481,6 +481,8 @@ EOF
         ## 5. populate the directory with backend specifics:
         backend allocate-run "$dir" "${backend_args[@]}"
 
+        backend start-cluster "$dir"
+
         ## 6. allocate genesis time
         ##    NOTE: The genesis time is different from the tag time.
         progress "run | time" "allocating time:"
@@ -787,6 +789,9 @@ EOF
         local scenario=${scenario_override:-$(jq -r .scenario "$dir"/profile.json)}
         scenario "$scenario" "$dir"
 
+        backend fetch-logs     "$dir"
+        backend stop-cluster   "$dir"
+
         run compat-meta-fixups "$run"
         ;;
 
@@ -817,7 +822,7 @@ EOF
           } * .
         '
         backend cleanup-cluster "$dir"
-        run start          "$@" "$run"
+        run start-cluster  "$@" "$run"
 
         msg "cluster re-started in the same run directory: $dir"
         ;;

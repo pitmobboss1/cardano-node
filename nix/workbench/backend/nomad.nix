@@ -32,16 +32,16 @@ let
           gitrev = pkgs.gitrev;
           # Binaries.
           containerPkgs = {
-            bashInteractive = rec {
-              nix-store-path  = pkgs.bashInteractive;
-              flake-reference = "github:input-output-hk/cardano-node";
-              flake-output = "legacyPackages.x86_64-linux.bashInteractive";
-              installable = "${flake-reference}/${gitrev}#${flake-output}";
-            };
             coreutils = rec {
               nix-store-path  = pkgs.coreutils;
               flake-reference = "github:input-output-hk/cardano-node";
               flake-output = "legacyPackages.x86_64-linux.coreutils";
+              installable = "${flake-reference}/${gitrev}#${flake-output}";
+            };
+            bashInteractive = rec {
+              nix-store-path  = pkgs.bashInteractive;
+              flake-reference = "github:input-output-hk/cardano-node";
+              flake-output = "legacyPackages.x86_64-linux.bashInteractive";
               installable = "${flake-reference}/${gitrev}#${flake-output}";
             };
             findutils = rec {
@@ -84,6 +84,19 @@ let
               nix-store-path  = pkgs.jq;
               flake-reference = "github:input-output-hk/cardano-node";
               flake-output = "legacyPackages.x86_64-linux.jq";
+              installable = "${flake-reference}/${gitrev}#${flake-output}";
+            };
+            openssh_hacks = rec {
+              commit = "7b89b1b3b1bed782de5fc3d22471e1bc0ec6c506"; # Branch "9.3p1";
+              nix-store-path  = (__getFlake "github:fmaste/openssh-portable-hacks/${commit}").packages.x86_64-linux.openssh_hacks;
+              flake-reference = "github:fmaste/openssh-portable-hacks";
+              flake-output = "packages.x86_64-linux.openssh_hacks";
+              installable = "${flake-reference}/${commit}#${flake-output}";
+            };
+            rsync = rec {
+              nix-store-path  = pkgs.rsync;
+              flake-reference = "github:input-output-hk/cardano-node";
+              flake-output = "legacyPackages.x86_64-linux.rsync";
               installable = "${flake-reference}/${gitrev}#${flake-output}";
             };
             # TODO: - cardano-node.passthru.profiled

@@ -143,7 +143,7 @@ EOF
         backend_supervisor save-pid-maps   "$dir"
         ;;
 
-    start )
+    start-cluster )
         local usage="USAGE: wb backend $op RUN-DIR"
         local dir=${1:?$usage}; shift
 
@@ -157,7 +157,11 @@ EOF
              cat "$dir"/supervisor/supervisord.log
              echo "$(white -------------------------------------------------)" >&2
              fatal "could not start $(white supervisord)"
-        fi
+        fi;;
+
+    start-tracers )
+        local usage="USAGE: wb backend $op RUN-DIR"
+        local dir=${1:?$usage}; shift
 
         if jqtest ".node.tracer" "$dir"/profile.json
         then if ! supervisorctl start tracer
@@ -278,11 +282,21 @@ EOF
         fi
         ;;
 
-    stop-cluster )
+    stop-all )
         local usage="USAGE: wb backend $op RUN-DIR"
         local dir=${1:?$usage}; shift
 
         supervisorctl stop all || true
+        ;;
+
+    fetch-logs )
+        # Unlike Nomad local or cloud, nothing to do here, logs are already in
+        # the run directory.
+        ;;
+
+    stop-cluster )
+        local usage="USAGE: wb backend $op RUN-DIR"
+        local dir=${1:?$usage}; shift
 
         if test -f ${dir}/supervisor/supervisord.pid -a \
                 -f ${dir}/supervisor/child.pids

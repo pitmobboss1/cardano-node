@@ -269,10 +269,11 @@ let
         constraint = {
           attribute = "\${node.class}";
           operator = "=";
-          # For testing we avoid using "infra" node class as HA jobs runs there
-          # For benchmarking dedicated static machines in the "perf"
-          # class are used and this value should be updated accordingly.
-          value = "qa";
+          # For cloud benchmarking dedicated static machines in the "perf"
+          # class are used. We replicate that for local/test runs.
+          # Class "qa" nodes are also available but must be limited to short
+          # test and avoid using "infra" node class as HA jobs runs there.
+          value = "perf";
         };
 
         # The network stanza specifies the networking requirements for the task
@@ -727,6 +728,33 @@ let
               error_on_missing_key = true;
               perms = "744"; # Only for every "start.sh" script. Default: "644"
             }
+          ]
+          ++
+          # ssh
+          [
+            ## ssh start.sh script.
+            {
+              env = false;
+              destination = "${task_statedir}/ssh/start.sh";
+              data = escapeTemplate
+                profileData.ssh-service.start.value;
+              change_mode = "noop";
+              error_on_missing_key = true;
+              perms = "744"; # Only for every "start.sh" script. Default: "644"
+            }
+            ## ssh config file.
+            {
+              env = false;
+              destination = "${task_statedir}/ssh/sshd_config";
+              data = escapeTemplate
+                profileData.ssh-service.config.value;
+              change_mode = "noop";
+              error_on_missing_key = true;
+              perms = "744"; # Only for every "start.sh" script. Default: "644"
+            }
+            # The deployer script must add the templates for the keys:
+            # - ${task_statedir}/ssh/sshd.id_ed25519
+            # - ${task_statedir}/ssh/nobody.id_ed25519.pub
           ]
           ;
 
