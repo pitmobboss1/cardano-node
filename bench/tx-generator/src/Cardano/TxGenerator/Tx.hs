@@ -9,6 +9,7 @@ module  Cardano.TxGenerator.Tx
 
 import           Control.Monad.Trans.Except (ExceptT, except)
 import           Control.Monad.Trans (lift)
+import           Control.Arrow ((&&&))
 import           Data.Bifunctor (bimap)
 import qualified Data.ByteString as BS (length)
 import           Data.Function ((&))
@@ -51,7 +52,7 @@ type CreateAndStoreList m era split = split -> ([TxOut CtxTx era], TxId -> m ())
 -- @mkTxOut@ gets built from functions in "Cardano.TxGenerator.UTxO".
 -- The other functions take 'CreateAndStoreList' arguments and name
 -- them @valueSplitter@ and callers construct the argument from the
--- mangling functions in 'Cardano.TxGenerator.Utils".
+-- mangling functions in 'Cardano.TxGenerator.Utils". 
 -- @fundToStore@ commits the single-threaded fund state in its sole
 -- caller with 'Control.Monad.State.put', using a @State@ monad.
 sourceToStoreTransaction ::
@@ -149,10 +150,9 @@ genTx :: forall era. ()
   -> TxMetadataInEra era
   -> TxGenerator era
 genTx _era protocolParameters (collateral, collFunds) fee metadata inFunds outputs
-  -- This use of 'Data.Bifunctor.bimap` lifts the error type to 'Env.Error'
-  -- at the same time as it adds a signature to the transaction body and
-  -- fetches the transaction ID from it too.
-  = ApiError `bimap` (\b -> (signShelleyTransaction b allKeys, getTxId b))
+  -- 'Data.Bifunctor.bimap` doesn't need composition with Left and
+  -- Right like 'Control.Arrow.(+++)' but otherwise does the same here.
+  = ApiError `bimap` (flip signShelleyTransaction allKeys &&& getTxId)
         $ createAndValidateTransactionBody txBodyContent
  where
   allKeys = mapMaybe (fmap WitnessPaymentKey . getFundKey) $ inFunds ++ collFunds
