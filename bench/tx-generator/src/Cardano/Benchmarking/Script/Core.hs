@@ -18,7 +18,6 @@
 module Cardano.Benchmarking.Script.Core
 where
 
-import           Control.Arrow ((|||))
 import           Control.Concurrent (threadDelay)
 import           Control.Monad
 import           Control.Monad.IO.Class
@@ -306,22 +305,22 @@ evalGenerator generator txParams@TxGenTxParams{txParamFee = fee} era = do
       (toUTxOChange, addressChange) <- interpretPayMode payModeChange
       traceDebug $ "split change address : " ++ addressChange
       let
-        inToOut = return . Utils.includeChange fee coins
+        fundSource = walletSource wallet 1
+        inToOut = Utils.includeChange fee coins
         txGenerator = genTx (cardanoEra @era) protocolParameters (TxInsCollateralNone, []) feeInEra TxMetadataNone
-      inputFunds <- promoteEither =<< liftIO (walletSource wallet 1)
-      sourceToStore <- withExceptT Env.TxGenError . sourceToStoreTransactionNew txGenerator inputFunds inToOut $ mangleWithChange (liftIOCreateAndStore toUTxOChange) (liftIOCreateAndStore toUTxO)
-      return $ Streaming.effect (Streaming.yield <$> (pure $ Right sourceToStore))
+        sourceToStore = sourceToStoreTransactionNew txGenerator fundSource inToOut $ mangleWithChange toUTxOChange toUTxO
+      return $ Streaming.effect (Streaming.yield <$> sourceToStore)
 
     SplitN walletName payMode count -> do
       wallet <- getEnvWallets walletName
       (toUTxO, addressOut) <- interpretPayMode payMode
       traceDebug $ "SplitN output address : " ++ addressOut
       let
-        inToOut = withExceptT TxGenError . Utils.inputsToOutputsWithFee fee count
+        fundSource = walletSource wallet 1
+        inToOut = Utils.inputsToOutputsWithFee fee count
         txGenerator = genTx (cardanoEra @era) protocolParameters (TxInsCollateralNone, []) feeInEra TxMetadataNone
-      inputFunds <- promoteEither =<< liftIO (walletSource wallet 1)
-      sourceToStore <- withExceptT Env.TxGenError $ sourceToStoreTransactionNew txGenerator inputFunds inToOut (mangle . repeat $ liftIOCreateAndStore toUTxO)
-      return $ Streaming.effect (Streaming.yield <$> (pure $ Right sourceToStore))
+        sourceToStore = sourceToStoreTransactionNew txGenerator fundSource inToOut (mangle $ repeat toUTxO)
+      return $ Streaming.effect (Streaming.yield <$> sourceToStore)
 
     NtoM walletName payMode inputs outputs metadataSize collateralWallet -> do
       wallet <- getEnvWallets walletName
@@ -329,23 +328,25 @@ evalGenerator generator txParams@TxGenTxParams{txParamFee = fee} era = do
       (toUTxO, addressOut) <- interpretPayMode payMode
       traceDebug $ "NtoM output address : " ++ addressOut
       let
-        inToOut = withExceptT TxGenError . Utils.inputsToOutputsWithFee fee outputs
+        fundSource = walletSource wallet inputs
+        inToOut = Utils.inputsToOutputsWithFee fee outputs
         txGenerator = genTx (cardanoEra @era) protocolParameters collaterals feeInEra (toMetadata metadataSize)
-      inputFunds <- promoteEither =<< liftIO (walletSource wallet inputs)
-      sourceToStore <- withExceptT Env.TxGenError $ sourceToStoreTransactionNew txGenerator inputFunds inToOut (mangle . repeat $ liftIOCreateAndStore toUTxO)
+        sourceToStore = sourceToStoreTransactionNew txGenerator fundSource inToOut (mangle $ repeat toUTxO)
 
       fundPreview <- liftIO $ walletPreview wallet inputs
-      preview <- withExceptT Env.TxGenError $ sourceTransactionPreview txGenerator fundPreview inToOut (mangle . repeat $ liftIOCreateAndStore toUTxO)
-      let txSize = txSizeInBytes preview
-      traceDebug $ "Projected Tx size in bytes: " ++ show txSize
-      summary_ <- getEnvSummary
-      forM_ summary_ $ \summary -> do
-        let summary' = summary {projectedTxSize = Just txSize}
-        setEnvSummary summary'
-        traceBenchTxSubmit TraceBenchPlutusBudgetSummary summary'
-      dumpBudgetSummaryIfExisting
+      case sourceTransactionPreview txGenerator fundPreview inToOut (mangle $ repeat toUTxO) of
+        Left err -> traceDebug $ "Error creating Tx preview: " ++ show err
+        Right tx -> do
+          let txSize = txSizeInBytes tx
+          traceDebug $ "Projected Tx size in bytes: " ++ show txSize
+          summary_ <- getEnvSummary
+          forM_ summary_ $ \summary -> do
+            let summary' = summary {projectedTxSize = Just txSize}
+            setEnvSummary summary'
+            traceBenchTxSubmit TraceBenchPlutusBudgetSummary summary'
+          dumpBudgetSummaryIfExisting
 
-      return $ Streaming.effect (Streaming.yield <$> (pure $ Right sourceToStore))
+      return $ Streaming.effect (Streaming.yield <$> sourceToStore)
 
     Sequence l -> do
       gList <- forM l $ \g -> evalGenerator g txParams era
@@ -363,14 +364,6 @@ evalGenerator generator txParams@TxGenTxParams{txParamFee = fee} era = do
 
   where
     feeInEra = Utils.mkTxFee fee
-    -- This combinator lifts the 'Either' hand-rolled exceptions sitting
-    -- as result values to the monad transformer stack by throwing the
-    -- 'Left' case as an exception, after some additional wrapping.
-    promoteEither = throwE . Env.TxGenError ||| pure
-    -- 'liftIOCreateAndStore' is supposed to be some indication that 'liftIO'
-    -- is applied to a 'CreateAndStore'.
-    -- This could be golfed as @((liftIO .) .)@ but it's unreadable.
-    liftIOCreateAndStore cas = second (\f x y -> liftIO (f x y)) . cas
 
 selectCollateralFunds :: forall era. IsShelleyBasedEra era
   => Maybe String
@@ -394,8 +387,6 @@ dumpToFileIO filePath tx = appendFile filePath ('\n' : show tx)
 initWallet :: String -> ActionM ()
 initWallet name = liftIO Wallet.initWallet >>= setEnvWallets name
 
--- The inner monad being 'IO' creates some programming overhead above.
--- Something like 'MonadIO' would be helpful, but the typing is tricky.
 interpretPayMode :: forall era. IsShelleyBasedEra era => PayMode -> ActionM (CreateAndStore IO era, String)
 interpretPayMode payMode = do
   networkId <- getEnvNetworkId
