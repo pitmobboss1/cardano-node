@@ -7,9 +7,12 @@
 
 module Cardano.Node.Tracing.Consistency
   ( getAllNamespaces
+  , asNSLookup
   ) where
 
 import           Control.Exception (SomeException)
+import           Data.Foldable (foldl')
+import qualified Data.Map.Strict as Map
 import qualified Data.Text as T
 import           Network.Mux (MuxTrace (..), WithMuxBearer (..))
 import qualified Network.Socket as Socket
@@ -24,6 +27,8 @@ import           Cardano.Node.Tracing.Tracers.Consensus
 import           Cardano.Node.Tracing.Tracers.Diffusion ()
 -- import           Cardano.Node.Tracing.Tracers.ForgingThreadStats (ForgeThreadStats,
 --                    forgeThreadStats, ForgingStats)
+import           Cardano.Node.Handlers.Shutdown (ShutdownTrace)
+import           Cardano.Node.Startup
 import           Cardano.Node.Tracing.Tracers.KESInfo ()
 import           Cardano.Node.Tracing.Tracers.NodeToClient ()
 import           Cardano.Node.Tracing.Tracers.NodeToNode ()
@@ -32,8 +37,6 @@ import           Cardano.Node.Tracing.Tracers.P2P ()
 import           Cardano.Node.Tracing.Tracers.Peer
 import           Cardano.Node.Tracing.Tracers.Shutdown ()
 import           Cardano.Node.Tracing.Tracers.Startup ()
-import           Cardano.Node.Handlers.Shutdown (ShutdownTrace)
-import           Cardano.Node.Startup
 
 import           Ouroboros.Consensus.BlockchainTime.WallClock.Types (RelativeTime)
 import           Ouroboros.Consensus.BlockchainTime.WallClock.Util (TraceBlockchainTimeEvent (..))
@@ -88,6 +91,42 @@ import           Ouroboros.Network.Subscription.Worker (SubscriptionTrace (..))
 import           Ouroboros.Network.TxSubmission.Inbound (TraceTxSubmissionInbound)
 import           Ouroboros.Network.TxSubmission.Outbound (TraceTxSubmissionOutbound)
 
+
+
+newtype NSLookup = NSLookup (Map.Map T.Text NSLookup)
+  deriving Show
+
+type NSWarnings = [T.Text]
+
+asNSLookup :: [[T.Text]] -> (NSLookup, NSWarnings)
+asNSLookup = foldl' (fillLookup []) (NSLookup Map.empty, [])
+  where
+    fillLookup :: [T.Text] -> (NSLookup, NSWarnings) -> [T.Text] -> (NSLookup, NSWarnings)
+    fillLookup _nsFull (NSLookup nsl, nsw)  [] = (NSLookup nsl, nsw)
+    fillLookup nsFull (NSLookup nsl, nsw) (ns1 : nstail) =
+      case Map.lookup ns1 nsl of
+        Nothing   ->  let nsNew = Map.empty
+                          (NSLookup nsl2, nsw2) = fillLookup
+                                                    (nsFull <> [ns1])
+                                                    (NSLookup nsNew, [])
+                                                    nstail
+                          res = NSLookup (Map.insert ns1 (NSLookup nsl2) nsl)
+                          newWarnings =  nsw <> nsw2
+                      in (res, newWarnings)
+        Just (NSLookup nsm)
+                  ->  let (NSLookup nsl2, nsw2) = fillLookup
+                                                  (nsFull <> [ns1])
+                                                  (NSLookup nsm, [])
+                                                  nstail
+                          res = NSLookup (Map.insert ns1 (NSLookup nsl2) nsl)
+                          -- condWarning = if ns1 == txt && null nstail
+                          --                 then Just "Duplicate namespace " <> nsFull
+                          --                 else Nothing
+                          newWarnings = nsw <> nsw2
+                                      -- case condWarning of
+                                      --     Nothing -> nsw
+                                      --     Just w  -> w : nsw
+                      in (res, newWarnings)
 
 getAllNamespaces :: [[T.Text]]
 getAllNamespaces =
