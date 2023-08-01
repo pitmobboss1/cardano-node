@@ -8,10 +8,6 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_GHC -fno-warn-overlapping-patterns #-}
 
-{-
-Module      : Cardano.TxGenerator.PlutusContext
-Description : Handle Plutus budgeting and script loading.
--}
 module  Cardano.TxGenerator.PlutusContext
         ( PlutusAutoLimitingFactor(..)
         , PlutusBudgetFittingStrategy(..)
@@ -39,11 +35,6 @@ import           Cardano.TxGenerator.Setup.Plutus (preExecutePlutusScript)
 import           Cardano.TxGenerator.Types
 
 
--- | This collects information describing the budget. It's only
--- directly referenced in "Cardano.Benchmarking.Script.Env" to supply
--- accessors as the state in an `Cardano.Benchmarking.Script.ActionM`
--- (RWST) monad and "Cardano.Benchmarking.Script.Core" where the only
--- field touched is `projectedTxSize`.
 data PlutusBudgetSummary =
   PlutusBudgetSummary
   { budgetPerBlock          :: !ExecutionUnits
@@ -66,8 +57,6 @@ data PlutusBudgetSummary =
   }
   deriving (Generic, Show, ToJSON)
 
--- | Nothing references this type's name or uses its constructors
--- outside this module.
 data PlutusAutoLimitingFactor
   = ExceededMemoryLimit
   | ExceededStepLimit
@@ -84,8 +73,7 @@ instance ToJSON ScriptData where
   toJSON = scriptDataToJson ScriptDataJsonDetailedSchema . unsafeHashableScriptData
 
 
--- | Load serialized ScriptData, filling in an empty value if no
--- .json file is given
+-- | load serialized ScriptData, filling in an empty value if no .json file is given
 readScriptData :: FilePath -> IO (Either TxGenError HashableScriptData)
 readScriptData ""
   = pure $ Right $ unsafeHashableScriptData $ ScriptDataNumber 0             -- TODO: make sure this is an adequate empty value
@@ -197,11 +185,6 @@ plutusAutoBudgetMaxOut
 plutusAutoBudgetMaxOut _ _ _ _ _
   = error "plutusAutoBudgetMaxOut : call to function in pre-Alonzo era. This is an implementation error in tx-generator."
 
--- | Only used in `plutusAutoScaleBlockfit`, this assembles a
--- `PlutusBudgetSummary` from information about the how to budget.
--- Some of the function arguments share names with the record fields
--- mass imported with the @Constr{..}@ notation, setting the field
--- of the final result to that argument.
 plutusBudgetSummary ::
      ProtocolParameters
   -> FilePath
@@ -240,8 +223,7 @@ plutusBudgetSummary _ _ _ _ _ _
   = error "plutusBudgetSummary : call to function in pre-Alonzo era. This is an implementation error in tx-generator."
 
 
--- | Modifies the first ScriptDataNumber encountered during traversal
--- to the value provided
+-- modifies the first ScriptDataNumber encountered during traversal to the value provided
 scriptDataModifyNumber :: (Integer -> Integer) -> ScriptData -> ScriptData
 scriptDataModifyNumber f
   = go

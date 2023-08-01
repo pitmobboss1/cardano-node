@@ -2,10 +2,6 @@
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-{-|
-Module      : Cardano.TxGenerator.Internal.Orphans
-Description : Export Aeson instances for `NetworkId`.
--}
 module  Cardano.TxGenerator.Internal.Orphans
         ()
         where
