@@ -110,12 +110,18 @@ checkConfiguration ::
   -> IO NSWarnings
 checkConfiguration configFileName = do
     trConfig           <- readConfigurationWithDefault configFileName defaultCardanoConfig
+    pure (checkConfiguration' trConfig)
+
+checkConfiguration' ::
+     TraceConfig
+  -> NSWarnings
+checkConfiguration' trConfig =
     let namespaces     = Map.keys (tcOptions trConfig)
         (nsLookup, systemWarnings) = asNSLookup getAllNamespaces
         configWarnings = mapMaybe (checkNamespace nsLookup) namespaces
         allWarnings    = map ("System namespace error: "<>) systemWarnings ++
                            map ("Config namespace error: " <>) configWarnings
-    pure allWarnings
+    in allWarnings
 
 -- | Check if a single namespace is legal. Returns jsut a wrning test,
 -- if this is not the case
