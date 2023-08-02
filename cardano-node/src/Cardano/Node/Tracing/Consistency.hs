@@ -2,9 +2,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module Cardano.Node.Tracing.Consistency
   ( getAllNamespaces
@@ -23,6 +23,7 @@ import qualified Network.Socket as Socket
 import           Cardano.Logging
 import           Cardano.Logging.Resources
 import           Cardano.Logging.Resources.Types ()
+import           Cardano.Node.Tracing.DefaultTraceConfig (defaultCardanoConfig)
 import           Cardano.Node.Tracing.Formatting ()
 import qualified Cardano.Node.Tracing.StateRep as SR
 import           Cardano.Node.Tracing.Tracers.BlockReplayProgress
@@ -94,23 +95,30 @@ import           Ouroboros.Network.Subscription.Worker (SubscriptionTrace (..))
 import           Ouroboros.Network.TxSubmission.Inbound (TraceTxSubmissionInbound)
 import           Ouroboros.Network.TxSubmission.Outbound (TraceTxSubmissionOutbound)
 
-
-
+-- | A data structure for the lookup of namespaces as nested maps
 newtype NSLookup = NSLookup (Map.Map T.Text NSLookup)
   deriving Show
 
+-- | Warniings as a list of text
 type NSWarnings = [T.Text]
 
-checkConfiguration :: TraceConfig -> NSWarnings
-checkConfiguration tc =
-  let (nsLookup, systemWarnings) = asNSLookup getAllNamespaces
-      configNamespaces = Map.keys (tcOptions tc)
-      configWarnings   = mapMaybe (checkNamespace nsLookup) configNamespaces
-      allWarnings      = map (<> "System namespace error: ") systemWarnings ++
-                         map (<> "Config namespace error: ") configWarnings
-  in allWarnings
+-- | Check the configuration in the given file.
+-- If there is no configuration in the file check the standard configuration
+-- An empty return list means, everything is well
+checkConfiguration ::
+     FilePath
+  -> IO NSWarnings
+checkConfiguration configFileName = do
+    trConfig           <- readConfigurationWithDefault configFileName defaultCardanoConfig
+    let namespaces     = Map.keys (tcOptions trConfig)
+        (nsLookup, systemWarnings) = asNSLookup getAllNamespaces
+        configWarnings = mapMaybe (checkNamespace nsLookup) namespaces
+        allWarnings    = map ("System namespace error: "<>) systemWarnings ++
+                           map ("Config namespace error: " <>) configWarnings
+    pure allWarnings
 
-
+-- | Check if a single namespace is legal. Returns jsut a wrning test,
+-- if this is not the case
 checkNamespace :: NSLookup -> [T.Text] -> Maybe T.Text
 checkNamespace nsLookup ns = go nsLookup ns
   where
@@ -121,7 +129,9 @@ checkNamespace nsLookup ns = go nsLookup ns
                                                         <> T.intercalate "." ns)
                                       Just l2 -> go l2 nstl
 
-
+-- | Builds a namespace lookup structure from a list of namespaces
+-- Warns if namespaces are not unique, and if a namespace is a subnamespace
+-- of other namespaces
 asNSLookup :: [[T.Text]] -> (NSLookup, NSWarnings)
 asNSLookup = foldl' (fillLookup []) (NSLookup Map.empty, [])
   where
@@ -156,6 +166,8 @@ asNSLookup = foldl' (fillLookup []) (NSLookup Map.empty, [])
                                            Just w  -> w : (nsw <> nsw2)
                       in (res, newWarnings)
 
+
+-- | Returns a list of all namepsaces from all tracers
 getAllNamespaces :: [[T.Text]]
 getAllNamespaces =
     -- NodeInfo tracer
