@@ -4,15 +4,18 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Cardano.Node.Tracing.Consistency
   ( getAllNamespaces
   , asNSLookup
+  , checkConfiguration
   ) where
 
 import           Control.Exception (SomeException)
 import           Data.Foldable (foldl')
 import qualified Data.Map.Strict as Map
+import           Data.Maybe (mapMaybe)
 import qualified Data.Text as T
 import           Network.Mux (MuxTrace (..), WithMuxBearer (..))
 import qualified Network.Socket as Socket
@@ -98,6 +101,27 @@ newtype NSLookup = NSLookup (Map.Map T.Text NSLookup)
 
 type NSWarnings = [T.Text]
 
+checkConfiguration :: TraceConfig -> NSWarnings
+checkConfiguration tc =
+  let (nsLookup, systemWarnings) = asNSLookup getAllNamespaces
+      configNamespaces = Map.keys (tcOptions tc)
+      configWarnings   = mapMaybe (checkNamespace nsLookup) configNamespaces
+      allWarnings      = map (<> "System namespace error: ") systemWarnings ++
+                         map (<> "Config namespace error: ") configWarnings
+  in allWarnings
+
+
+checkNamespace :: NSLookup -> [T.Text] -> Maybe T.Text
+checkNamespace nsLookup ns = go nsLookup ns
+  where
+    go :: NSLookup -> [T.Text] -> Maybe T.Text
+    go _ [] = Nothing
+    go (NSLookup l) (nshd : nstl) = case Map.lookup nshd l of
+                                      Nothing -> Just ("Illegal namespace "
+                                                        <> T.intercalate "." ns)
+                                      Just l2 -> go l2 nstl
+
+
 asNSLookup :: [[T.Text]] -> (NSLookup, NSWarnings)
 asNSLookup = foldl' (fillLookup []) (NSLookup Map.empty, [])
   where
@@ -119,13 +143,17 @@ asNSLookup = foldl' (fillLookup []) (NSLookup Map.empty, [])
                                                   (NSLookup nsm, [])
                                                   nstail
                           res = NSLookup (Map.insert ns1 (NSLookup nsl2) nsl)
-                          -- condWarning = if ns1 == txt && null nstail
-                          --                 then Just "Duplicate namespace " <> nsFull
-                          --                 else Nothing
-                          newWarnings = nsw <> nsw2
-                                      -- case condWarning of
-                                      --     Nothing -> nsw
-                                      --     Just w  -> w : nsw
+                          condWarning = if null nstail
+                                          then
+                                            if Map.null nsm
+                                              then Just ("Duplicate namespace "
+                                                        <> T.intercalate "." nsFull)
+                                              else Just ("Inner namespace duplicate "
+                                                        <> T.intercalate "." nsFull)
+                                          else Nothing
+                          newWarnings = case condWarning of
+                                           Nothing -> nsw <> nsw2
+                                           Just w  -> w : (nsw <> nsw2)
                       in (res, newWarnings)
 
 getAllNamespaces :: [[T.Text]]
