@@ -1,5 +1,8 @@
 {-# LANGUAGE LambdaCase #-}
 
+{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
+-- showHex needs to be a show instance on ghc8, but not any more on ghc9
+
 module Cardano.Logging.Utils (
     runInLoop
   , uncurry3
