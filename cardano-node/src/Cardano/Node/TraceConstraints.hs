@@ -46,7 +46,6 @@ type TraceConstraints blk =
     , HasKESInfo blk
     , GetKESInfo blk
     , RunNode blk
-    , GetHeader (Serialised blk)
 
     , ToObject (ApplyTxErr blk)
     , ToObject (GenTx blk)
