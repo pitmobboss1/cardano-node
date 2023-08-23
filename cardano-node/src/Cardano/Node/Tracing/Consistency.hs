@@ -10,6 +10,7 @@ module Cardano.Node.Tracing.Consistency
   ( getAllNamespaces
   , asNSLookup
   , checkConfiguration
+  , checkConfiguration'
   ) where
 
 import           Control.Exception (SomeException)
@@ -123,7 +124,7 @@ checkConfiguration' trConfig =
                            map ("Config namespace error: " <>) configWarnings
     in allWarnings
 
--- | Check if a single namespace is legal. Returns jsut a wrning test,
+-- | Check if a single namespace is legal. Returns just a warning test,
 -- if this is not the case
 checkNamespace :: NSLookup -> [T.Text] -> Maybe T.Text
 checkNamespace nsLookup ns = go nsLookup ns
