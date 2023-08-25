@@ -31,26 +31,40 @@ let
       ##
       ## "Resources".backends = ["EKGBackend"];
 
+      "BlockFetch.Decision".severity = "Info";
+      "ChainDB".severity = "Info";
+      "ChainSync.Client".severity = "Info";
+      "Net.ConnectionManager.Remote".severity = "Info";
+      "Net.Subscription.IP".severity = "Info";
+      "Startup.DiffusionInit".severity = "Info";
+      "Forge.Loop".severity = "Info";
+
+      "Net.InboundGovernor.Remote".severity = "Info";
+      "IpSubscription".severity = "Info";
+      "Net.ErrorPolicy.Remote".severity = "Info";
+      "Mempool".severity = "Info";
+      "Net.Mux.Remote" = "Info";
+      "Net.PeerSelection".severity = "Info";
+      "Resources".severity= "Info";
+
+
       "Net.AcceptPolicy".severity = "Info";
       "BlockFetch.Client".severity = "Info";
       "BlockFetch.Server".severity = "Info";
-      "ChainDB".severity = "Info";
-      "ChainSync.Client".severity = "Info";
       "ChainSync.ServerBlock".severity = "Info";
       "ChainSync.ServerHeader".severity = "Info";
-      "Forge.Loop".severity = "Info";
+
       "Net.ConnectionManager".severity = "Info";
       "Net.Startup.DiffusionInit".severity = "Info";
       "Net.DNSResolver".severity = "Info";
-      "Net.ErrorPolicy".severity = "Info";
+      "Net.ErrorPolicy.Local".severity = "Info";
       "Net.InboundGovernor".severity = "Info";
       "Net.Subscription.DNS".severity = "Info";
       "Net.Subscription.IP".severity = "Info";
       "Net.Peers".severity = "Info";
-      "Net.PeerSelection".severity = "Info";
+
       "Net.Server".severity = "Info";
-      "Mempool".severity = "Info";
-      "Resources".severity= "Info";
+
       "TxSubmission.TxInbound".severity = "Info";
 
       "ChainDB.FollowerEvent.NewFollower".severity = "Debug";
