@@ -17,12 +17,8 @@ tests = H.checkSequential
       $ test
      <$> [ (  []
            , "goodConfig.yaml")
-         , (  [ "System namespace error: Duplicate namespace Forge.Loop"
-              , "Config namespace error: Illegal namespace DNSSubscription"
-              , "Config namespace error: Illegal namespace DiffusionInit"
-              , "Config namespace error: Illegal namespace ErrorPolicy"
-              , "Config namespace error: Illegal namespace IpSubscription"
-              , "Config namespace error: Illegal namespace LocalErrorPolicy"
+         , (  [ "Config namespace error: Illegal namespace ChainDB.CopyToImmutableDBEvent2.CopiedBlockToImmutableDB"
+              , "Config namespace error: Illegal namespace SubscriptionDNS"
               ]
            , "badConfig.yaml")
            -- TODO: add mainnet config as good

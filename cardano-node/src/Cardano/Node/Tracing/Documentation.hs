@@ -344,7 +344,7 @@ docTracers configFileName outputFileName _ _ _ = do
     -- TODO YUP
     -- forgeTr' <-  mkCardanoTracer'
     --             trBase trForward mbTrEKG
-    --             ["Forge", "Loop"]
+    --             ["Forge", "ThreadStats"]
     --             forgeThreadStats
     -- configureTracers configReflection trConfig [forgeTr']
     -- forgeThreadStatsTrDoc <- documentTracer' forgeThreadStats (forgeTr' ::

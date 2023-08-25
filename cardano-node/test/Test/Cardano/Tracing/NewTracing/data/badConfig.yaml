@@ -29,7 +29,7 @@ TraceOptions:
   ChainDB.AddBlockEvent.AddedBlockToVolatileDB:
     maxFrequency: 2.0
 
-  ChainDB.CopyToImmutableDBEvent.CopiedBlockToImmutableDB:
+  ChainDB.CopyToImmutableDBEvent2.CopiedBlockToImmutableDB:
     maxFrequency: 2.0
 
   ChainSync.Client:
@@ -57,7 +57,10 @@ TraceOptions:
   Net.ErrorPolicy:
     severity: Info
 
-  Net.Subscription:
+  Net.Subscription.IP:
+    severity: Info
+
+  SubscriptionDNS:
     severity: Info
 
   Resources:

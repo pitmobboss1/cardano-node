@@ -285,7 +285,7 @@ mkConsensusTracers configReflection trBase trForward mbTrEKG _trDataPoint trConf
 
     !forgeThreadStatsTr <- mkCardanoTracer'
                 trBase trForward mbTrEKG
-                ["Forge"]
+                ["Forge", "ThreadStats"]
                 forgeThreadStats
     configureTracers configReflection trConfig [forgeThreadStatsTr]
 

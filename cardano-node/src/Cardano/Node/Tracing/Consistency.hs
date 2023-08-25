@@ -164,9 +164,9 @@ asNSLookup = foldl' (fillLookup []) (NSLookup Map.empty, [])
                                           then
                                             if Map.null nsm
                                               then Just ("Duplicate namespace "
-                                                        <> T.intercalate "." nsFull)
+                                                        <> T.intercalate "." (nsFull <> [ns1]))
                                               else Just ("Inner namespace duplicate "
-                                                        <> T.intercalate "." nsFull)
+                                                        <> T.intercalate "." (nsFull <> [ns1]))
                                           else Nothing
                           newWarnings = case condWarning of
                                            Nothing -> nsw <> nsw2
@@ -217,7 +217,7 @@ getAllNamespaces =
         blockFetchServerNS = map (nsGetComplete . nsReplacePrefix ["BlockFetch", "Server"])
                     (allNamespaces :: [Namespace (TraceBlockFetchServerEvent blk)])
 
-        forgeKESInfoNS = map (nsGetComplete . nsReplacePrefix ["Forge", "KESInfo"])
+        forgeKESInfoNS = map (nsGetComplete . nsReplacePrefix ["Forge"])
                     (allNamespaces :: [Namespace (Consensus.TraceLabelCreds HotKey.KESInfo)])
         txInboundNS = map (nsGetComplete . nsReplacePrefix ["TxSubmission", "TxInbound"])
                         (allNamespaces :: [Namespace (BlockFetch.TraceLabelPeer
@@ -239,7 +239,7 @@ getAllNamespaces =
     -- TODO YUP
     -- forgeTr' <-  mkCardanoTracer'
     --             trBase trForward mbTrEKG
-    --             ["Forge", "Loop"]
+    --             ["Forge", "ThreadStats"]
     --             forgeThreadStats
     -- configureTracers configReflection trConfig [forgeTr']
     -- forgeThreadStatsTrDoc <- documentTracer' forgeThreadStats (forgeTr' ::
