@@ -1,6 +1,7 @@
 name: "Haddock documentation"
 
 on:
+  pull_request: # REMOVEME
   push:
     branches:
       - master
@@ -22,7 +23,7 @@ jobs:
 
     env:
       # Modify this value to "invalidate" the cabal cache.
-      CABAL_CACHE_VERSION: "2023-07-28"
+      CABAL_CACHE_VERSION: "2023-09-12"
 
       # Modify this value to "invalidate" the secp cache.
       SECP_CACHE_VERSION: "2022-12-30"
@@ -31,36 +32,22 @@ jobs:
       SECP256K1_REF: ac83be33d0956faf6b7f61a60ab524ef7d6a473a
 
     steps:
-    - name: Workaround runner image issue
-      if: runner.os == 'Linux'
-      # https://github.com/actions/runner-images/issues/7061
-      run: sudo chown -R $USER /usr/local/.ghcup
+    - name: Add build script path
+      run: echo "$(pwd)/.github/bin" >> $GITHUB_PATH
 
     - name: Install Haskell
-      uses: input-output-hk/setup-haskell@v1
+      uses: input-output-hk/actions/haskell@latest
       id: setup-haskell
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: ${{ matrix.cabal }}
 
-    - uses: actions/checkout@v3
-
-    - name: Add build script path
-      run: echo "$(pwd)/.github/bin" >> $GITHUB_PATH
-
-    - name: Install build environment
-      run: |
-        sudo apt-get update
-        sudo apt-get -y install libsodium23 libsodium-dev
-        sudo apt-get -y install libsystemd0 libsystemd-dev
-        sudo apt-get -y remove --purge software-properties-common
-        sudo apt-get -y autoremove
-
-    - name: Install secp256k1
-      uses: input-output-hk/setup-secp256k1@v1
+    - name: Install system dependencies
+      uses: input-output-hk/actions/base@latest
       with:
-        git-ref: ${{ env.SECP256K1_REF }}
-        cache-version: ${{ env.SECP_CACHE_VERSION }}
+        use-sodium-vrf: true # default is true
+
+    - uses: actions/checkout@v3
 
     - name: Cabal update
       run: cabal update
@@ -75,7 +62,7 @@ jobs:
       run: |
         cabal build all --dry-run
         mkdir ./haddocks
-        DRY_RUN=1 ./scripts/haddocs.sh ./haddocks true
+        DRY_RUN=1 ./scripts/haddocks.sh ./haddocks true
 
     - name: Cabal cache over S3
       uses: action-works/cabal-cache-s3@v1
@@ -104,7 +91,7 @@ jobs:
       run: cabal build all
 
     - name: Build Haddock documentation 🔧
-      run: ./scripts/haddocs.sh ./haddocks true
+      run: ./scripts/haddocks.sh ./haddocks true
 
     - name: View HTML files
       run: |

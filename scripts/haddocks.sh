@@ -7,7 +7,7 @@
 # $1 - where to put the generated pages, this directory contents will be wiped
 #      out (so don't pass `/` or `./` - the latter will delete your 'dist-newstyle')
 #      (the default is './haddocks')
-# $2 - whether to re-build haddocjs with `cabal haddock` command or a component name
+# $2 - whether to re-build haddocks with `cabal haddock` command or a component name
 #      (the default is true)
 # $3 - cabal build directory
 #      (the default is "dist-newstyle")
@@ -53,12 +53,9 @@ HADDOCK_OPTS=(
 # build documentation of all modules
 if [ ${REGENERATE} == "true" ]; then
   cabal haddock "${HADDOCK_OPTS[@]}" \
-    cardano-api \
-    cardano-cli \
     cardano-git-rev \
     cardano-node \
     hedgehog-extras \
-    exe:cardano-cli \
     exe:cardano-node \
     exe:cardano-node-chairman \
     exe:cardano-testnet
@@ -69,10 +66,6 @@ fi
 if [ "${DRY_RUN}" == 1 ]; then
   echo "Exiting dry run"
   exit 0
-fi
-
-if [[ !( -d ${OUTPUT_DIR} ) ]]; then
-  mkdir -p ${OUTPUT_DIR}
 fi
 
 mkdir -p "${OUTPUT_DIR}/_plan/"
