@@ -13,6 +13,16 @@ module Testnet.Defaults
 
 import           Cardano.Api (AnyCardanoEra (..), CardanoEra (..))
 import qualified Cardano.Api.Shelley as Api
+
+import           Cardano.Ledger.Alonzo.Core (CoinPerWord (..))
+import           Cardano.Ledger.Alonzo.Genesis (AlonzoGenesis (..))
+import           Cardano.Ledger.Alonzo.Scripts
+import           Cardano.Ledger.BaseTypes
+import           Cardano.Ledger.Coin
+import           Cardano.Ledger.Conway.Genesis
+import           Cardano.Ledger.Crypto (StandardCrypto)
+import           Cardano.Tracing.Config
+
 import           Prelude
 
 import           Data.Aeson (ToJSON (..), Value, (.=))
@@ -27,16 +37,6 @@ import           Data.Ratio
 import           Data.Scientific
 import qualified Data.Vector as Vector
 import           Data.Word
-
-import           Cardano.Ledger.Alonzo.Core (CoinPerWord (..))
-import           Cardano.Ledger.Alonzo.Genesis (AlonzoGenesis (..))
-import           Cardano.Ledger.Alonzo.Scripts
-import           Cardano.Ledger.BaseTypes
-import           Cardano.Ledger.Coin
-import           Cardano.Ledger.Conway.Genesis
-import           Cardano.Ledger.Crypto (StandardCrypto)
-
-import           Cardano.Tracing.Config
 
 
 instance Api.Error AlonzoGenesisError where

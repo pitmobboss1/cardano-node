@@ -15,6 +15,9 @@ module Cardano.Testnet.Test.Cli.Babbage.StakeSnapshot
   ( hprop_stakeSnapshot
   ) where
 
+import           Cardano.CLI.Types.Output (QueryTipLocalStateOutput (..))
+import           Cardano.Testnet
+
 import           Prelude
 
 import           Control.Monad (void)
@@ -28,13 +31,11 @@ import           GHC.Stack (callStack)
 import           System.FilePath ((</>))
 import qualified System.Info as SYS
 
-import           Cardano.CLI.Types.Output (QueryTipLocalStateOutput (..))
-import           Cardano.Testnet
-
 import           Hedgehog (Property, (===))
 import qualified Hedgehog as H
 import qualified Hedgehog.Extras.Test.Base as H
 import qualified Hedgehog.Extras.Test.File as H
+
 import qualified Testnet.Process.Run as H
 import           Testnet.Process.Run
 import qualified Testnet.Property.Utils as H

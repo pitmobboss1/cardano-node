@@ -1,17 +1,18 @@
 module Cardano.Testnet.Test.Misc where
 
+import           Cardano.CLI.EraBased.Run.Query (renderOpCertIntervalInformation)
+import           Cardano.CLI.Types.Common
+import           Cardano.CLI.Types.Output
+
 import           Prelude
 
 import           Data.List (isInfixOf)
 import qualified GHC.Stack as GHC
 
-import           Cardano.CLI.EraBased.Run.Query (renderOpCertIntervalInformation)
-import           Cardano.CLI.Types.Common
-import           Cardano.CLI.Types.Output
-
 import           Hedgehog (success)
 import qualified Hedgehog as H
 import           Hedgehog.Extras.Test.Base (Integration, failMessage, note_)
+
 
 -- | This property checks that a given operational certificate has a valid specified KES starting period.
 prop_op_cert_valid_kes_period :: GHC.HasCallStack => FilePath -> QueryKesPeriodInfoOutput -> Integration ()

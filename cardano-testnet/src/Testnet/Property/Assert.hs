@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeApplications #-}
@@ -11,32 +12,35 @@ module Testnet.Property.Assert
   , getRelevantSlots
   ) where
 
-import           Prelude hiding (lines)
+
+
+import           Prelude
 
 import qualified Control.Concurrent as IO
 import           Control.Monad
-import           Control.Monad.IO.Class (MonadIO)
-import           Control.Monad.Trans.Reader (ReaderT)
+import           Control.Monad.Reader
 import           Control.Monad.Trans.Resource (ResourceT)
-import           Data.Aeson (FromJSON (..), Value, (.:))
-import           Data.Text (Text)
-import           Data.Word (Word8)
-import           GHC.Stack (HasCallStack)
-import qualified GHC.Stack as GHC
-import           Hedgehog (MonadTest)
-import           Hedgehog.Extras.Internal.Test.Integration (IntegrationState)
-
+import           Data.Aeson
 import qualified Data.Aeson as Aeson
 import qualified Data.Aeson.Types as Aeson
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.List as L
-import           Data.Maybe (mapMaybe)
+import           Data.Maybe
 import qualified Data.Maybe as Maybe
+import           Data.Text (Text)
 import qualified Data.Time.Clock as DTC
+import           Data.Word
+import           GHC.Stack (HasCallStack)
+import qualified GHC.Stack as GHC
+
+import           Hedgehog (MonadTest)
 import qualified Hedgehog as H
+import           Hedgehog.Extras.Internal.Test.Integration (IntegrationState)
 import qualified Hedgehog.Extras.Stock.IO.File as IO
 import qualified Hedgehog.Extras.Test.Base as H
-import           Testnet.Runtime (NodeLoggingFormat (..))
+
+import           Testnet.Start.Types
+
 
 newlineBytes :: Word8
 newlineBytes = 10
@@ -46,8 +50,8 @@ readJsonLines fp = mapMaybe (Aeson.decode @Value) . LBS.split newlineBytes <$> H
 
 fileJsonGrep :: FilePath -> (Value -> Bool) -> IO Bool
 fileJsonGrep fp f = do
-  lines <- LBS.split newlineBytes <$> LBS.readFile fp
-  let jsons = mapMaybe (Aeson.decode @Value) lines
+  lines' <- LBS.split newlineBytes <$> LBS.readFile fp
+  let jsons = mapMaybe (Aeson.decode @Value) lines'
   return $ L.any f jsons
 
 assertByDeadlineIOCustom
