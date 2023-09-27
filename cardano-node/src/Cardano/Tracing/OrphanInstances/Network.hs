@@ -41,7 +41,6 @@ import           Network.Mux (MiniProtocolNum (..), MuxTrace (..), WithMuxBearer
 import           Network.Socket (SockAddr (..))
 
 import           Cardano.Node.Queries (ConvertTxId)
-import           Cardano.Node.Types (UseLedger (..))
 import           Cardano.Tracing.OrphanInstances.Common
 import           Cardano.Tracing.Render
 
@@ -116,6 +115,8 @@ import           Ouroboros.Network.TxSubmission.Inbound (ProcessedTxCount (..),
 import           Ouroboros.Network.TxSubmission.Outbound (TraceTxSubmissionOutbound (..))
 
 import qualified Ouroboros.Network.Diffusion as ND
+import           Ouroboros.Network.PeerSelection.PublicRootPeers (PublicRootPeers)
+import qualified Ouroboros.Network.PeerSelection.PublicRootPeers as PublicRootPeers
 
 {- HLINT ignore "Use record patterns" -}
 
@@ -223,7 +224,7 @@ instance HasSeverityAnnotation TraceLedgerPeers where
       PickedBigLedgerPeers {}        -> Info
       FetchingNewLedgerState {}      -> Info
       DisabledLedgerPeers {}         -> Info
-      TraceUseLedgerAfter {}         -> Info
+      TraceUseLedgerPeers {}         -> Info
       WaitingOnRequest {}            -> Debug
       RequestForPeers {}             -> Debug
       ReusingLedgerState {}          -> Debug
@@ -457,6 +458,9 @@ instance HasSeverityAnnotation (TracePeerSelection addr) where
       TraceDemoteHotBigLedgerPeerDone {}   -> Info
 
       TraceDemoteBigLedgerPeersAsynchronous {} -> Warning
+
+      TraceLedgerStateJudgementChanged {} -> Info
+      TraceOnlyBootstrapPeers {}          -> Info
 
 instance HasPrivacyAnnotation (DebugPeerSelection addr)
 instance HasSeverityAnnotation (DebugPeerSelection addr) where
@@ -1340,10 +1344,10 @@ instance ToObject TraceLedgerPeers where
     mconcat
       [ "kind" .= String "DisabledLedgerPeers"
       ]
-  toObject _verb (TraceUseLedgerAfter ula) =
+  toObject _verb (TraceUseLedgerPeers ulp) =
     mconcat
-      [ "kind" .= String "UseLedgerAfter"
-      , "useLedgerAfter" .= UseLedger ula
+      [ "kind" .= String "UseLedgerPeers"
+      , "useLedgerPeers" .= ulp
       ]
   toObject _verb WaitingOnRequest =
     mconcat
@@ -1527,6 +1531,14 @@ instance ToJSON PeerSelectionTargets where
                  , "targetActiveBigLedgerPeers" .= nActiveBigLedgerPeers
                  ]
 
+instance ToJSON peerAddr => ToJSON (PublicRootPeers peerAddr) where
+  toJSON prp =
+    Aeson.object [ "kind" .= String "PublicRootPeers"
+                 , "bootstrapPeers" .= PublicRootPeers.toBootstrapPeerSet prp
+                 , "ledgerPeers" .= PublicRootPeers.toLedgerPeerSet prp
+                 , "bigLedgerPeers" .= PublicRootPeers.toBigLedgerPeerSet prp
+                 ]
+
 instance ToJSON ReconnectDelay where
   toJSON = toJSON . reconnectDelay
 
@@ -1552,7 +1564,7 @@ instance ToObject (TracePeerSelection SockAddr) where
              ]
   toObject _verb (TracePublicRootsResults res group dt) =
     mconcat [ "kind" .= String "PublicRootsResults"
-             , "result" .= Aeson.toJSONList (toList res)
+             , "result" .= toJSON res
              , "group" .= group
              , "diffTime" .= dt
              ]
@@ -1813,6 +1825,13 @@ instance ToObject (TracePeerSelection SockAddr) where
     mconcat [ "kind" .= String "KnownInboundConnection"
              , "peer" .= show addr
              , "peerSharing" .= show sharing ]
+  toObject _verb (TraceLedgerStateJudgementChanged old new) =
+    mconcat [ "kind" .= String "LedgerStateJudgementChanged"
+             , "old" .= show old
+             , "new" .= show new ]
+  toObject _verb (TraceOnlyBootstrapPeers pst) =
+    mconcat [ "kind" .= String "OnlyBootstrapPeers"
+             , "peerSelectionTargets" .= show pst ]
 
 -- Connection manager abstract state.  For explanation of each state see
 -- <https://hydra.iohk.io/job/Cardano/ouroboros-network/native.network-docs.x86_64-linux/latest/download/2>
@@ -1868,7 +1887,7 @@ peerSelectionTargetsToObject
 
 instance ToObject (DebugPeerSelection SockAddr) where
   toObject verb (TraceGovernorState blockedAt wakeupAfter
-                   PeerSelectionState { targets, knownPeers, establishedPeers, activePeers, bigLedgerPeers })
+                   PeerSelectionState { targets, knownPeers, establishedPeers, activePeers, publicRootPeers })
       | verb <= NormalVerbosity =
     mconcat [ "kind" .= String "DebugPeerSelection"
              , "blockedAt" .= String (pack $ show blockedAt)
@@ -1886,6 +1905,8 @@ instance ToObject (DebugPeerSelection SockAddr) where
                                  ])
 
              ]
+    where
+     bigLedgerPeers = PublicRootPeers.toBigLedgerPeerSet publicRootPeers
   toObject _ (TraceGovernorState blockedAt wakeupAfter ev) =
     mconcat [ "kind" .= String "DebugPeerSelection"
              , "blockedAt" .= String (pack $ show blockedAt)

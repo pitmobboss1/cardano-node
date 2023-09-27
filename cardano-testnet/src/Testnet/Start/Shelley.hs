@@ -32,13 +32,12 @@ import           GHC.Stack (HasCallStack, withFrozenCallStack)
 import           System.FilePath.Posix ((</>))
 
 import           Hedgehog.Extras.Stock.Aeson (rewriteObject)
-import           Ouroboros.Network.PeerSelection.LedgerPeers (UseLedgerAfter (..))
+import           Ouroboros.Network.PeerSelection.LedgerPeers.Type (UseLedgerPeers (..))
 import           Ouroboros.Network.PeerSelection.RelayAccessPoint (RelayAccessPoint (..))
 
 import           Cardano.Api hiding (Value)
 import qualified Cardano.Node.Configuration.Topology as NonP2P
 import qualified Cardano.Node.Configuration.TopologyP2P as P2P
-import           Cardano.Node.Types (UseLedger (..))
 import qualified Data.Aeson as J
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.List as L
@@ -66,6 +65,8 @@ import           Testnet.Process.Run
 import           Testnet.Property.Assert
 import           Testnet.Runtime hiding (allNodes)
 
+import           Ouroboros.Network.PeerSelection.Bootstrap
+import           Ouroboros.Network.PeerSelection.PeerTrustable
 import           Ouroboros.Network.PeerSelection.State.LocalRootPeers (HotValency (..),
                    WarmValency (..))
 
@@ -150,6 +151,7 @@ mkTopologyConfig numPraosNodes allPorts port True = J.encode topologyP2P
         [ P2P.LocalRootPeersGroup rootConfig
                                   (HotValency (numPraosNodes - 1))
                                   (WarmValency (numPraosNodes - 1))
+                                  IsTrustable
         ]
 
     topologyP2P :: P2P.NetworkTopology
@@ -157,7 +159,8 @@ mkTopologyConfig numPraosNodes allPorts port True = J.encode topologyP2P
       P2P.RealNodeTopology
         localRootPeerGroups
         []
-        (UseLedger DontUseLedger)
+        DontUseLedgerPeers
+        DontUseBootstrapPeers
 
 shelleyTestnet :: ShelleyTestnetOptions -> H.Conf -> H.Integration TestnetRuntime
 shelleyTestnet testnetOptions H.Conf {H.tempAbsPath} = do

@@ -40,12 +40,11 @@ import qualified System.Directory as IO
 import           System.FilePath.Posix ((</>))
 import qualified System.Info as OS
 
-import           Ouroboros.Network.PeerSelection.LedgerPeers (UseLedgerAfter (..))
+import           Ouroboros.Network.PeerSelection.LedgerPeers.Type (UseLedgerPeers (..))
 import           Ouroboros.Network.PeerSelection.RelayAccessPoint (RelayAccessPoint (..))
 
 import qualified Cardano.Node.Configuration.Topology as NonP2P
 import qualified Cardano.Node.Configuration.TopologyP2P as P2P
-import           Cardano.Node.Types (UseLedger (..))
 
 import qualified Hedgehog as H
 import qualified Hedgehog.Extras.Stock.Aeson as J
@@ -70,6 +69,8 @@ import           Testnet.Runtime as TR
 import           Testnet.Start.Byron hiding (TestnetOptions (..))
 import           Testnet.Start.Shelley
 
+import           Ouroboros.Network.PeerSelection.Bootstrap
+import           Ouroboros.Network.PeerSelection.PeerTrustable
 import           Ouroboros.Network.PeerSelection.State.LocalRootPeers (HotValency (..),
                    WarmValency (..))
 
@@ -178,6 +179,7 @@ mkTopologyConfig numNodes allPorts port True = J.encode topologyP2P
         [ P2P.LocalRootPeersGroup rootConfig
                                   (HotValency (numNodes - 1))
                                   (WarmValency (numNodes - 1))
+                                  IsTrustable
         ]
 
     topologyP2P :: P2P.NetworkTopology
@@ -185,7 +187,8 @@ mkTopologyConfig numNodes allPorts port True = J.encode topologyP2P
       P2P.RealNodeTopology
         localRootPeerGroups
         []
-        (UseLedger DontUseLedger)
+        DontUseLedgerPeers
+        DontUseBootstrapPeers
 
 cardanoTestnet :: CardanoTestnetOptions -> H.Conf -> H.Integration TestnetRuntime
 cardanoTestnet testnetOptions H.Conf {H.tempAbsPath} = do

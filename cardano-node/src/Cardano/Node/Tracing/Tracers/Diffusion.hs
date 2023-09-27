@@ -23,8 +23,6 @@ import           Network.Mux (MuxTrace (..), WithMuxBearer (..))
 import           Network.Mux.Types
 import           Network.TypedProtocol.Codec (AnyMessageAndAgency (..))
 
-import           Cardano.Node.Types (UseLedger (..))
-
 import qualified Data.List as List
 import qualified Ouroboros.Network.Diffusion as ND
 import qualified Ouroboros.Network.NodeToNode as NtN
@@ -799,10 +797,10 @@ instance LogFormatting TraceLedgerPeers where
     mconcat
       [ "kind" .= String "DisabledLedgerPeers"
       ]
-  forMachine _dtal (TraceUseLedgerAfter ula) =
+  forMachine _dtal (TraceUseLedgerPeers ulp) =
     mconcat
       [ "kind" .= String "UseLedgerAfter"
-      , "useLedgerAfter" .= UseLedger ula
+      , "useLedgerPeers" .= ulp
       ]
   forMachine _dtal WaitingOnRequest =
     mconcat
@@ -849,8 +847,8 @@ instance MetaTrace TraceLedgerPeers where
       Namespace [] ["FetchingNewLedgerState"]
     namespaceFor DisabledLedgerPeers {} =
       Namespace [] ["DisabledLedgerPeers"]
-    namespaceFor TraceUseLedgerAfter {} =
-      Namespace [] ["TraceUseLedgerAfter"]
+    namespaceFor TraceUseLedgerPeers {} =
+      Namespace [] ["TraceUseLedgerPeers"]
     namespaceFor WaitingOnRequest {} =
       Namespace [] ["WaitingOnRequest"]
     namespaceFor RequestForPeers {} =

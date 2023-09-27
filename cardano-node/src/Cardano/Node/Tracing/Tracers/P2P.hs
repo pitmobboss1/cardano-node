@@ -47,6 +47,8 @@ import           Ouroboros.Network.PeerSelection.RootPeersDNS (TraceLocalRootPee
                    TracePublicRootPeers (..))
 import qualified Ouroboros.Network.PeerSelection.State.EstablishedPeers as EstablishedPeers
 import qualified Ouroboros.Network.PeerSelection.State.KnownPeers as KnownPeers
+import           Ouroboros.Network.PeerSelection.State.LocalRootPeers (HotValency (..),
+                   WarmValency (..))
 import           Ouroboros.Network.PeerSelection.Types ()
 import           Ouroboros.Network.RethrowPolicy (ErrorCommand (..))
 import           Ouroboros.Network.Server2 (ServerTrace (..))
@@ -231,7 +233,7 @@ instance LogFormatting (TracePeerSelection SockAddr) where
              ]
   forMachine _dtal (TracePublicRootsResults res group dt) =
     mconcat [ "kind" .= String "PublicRootsResults"
-             , "result" .= toJSONList (toList res)
+             , "result" .= toJSON res
              , "group" .= group
              , "diffTime" .= dt
              ]
@@ -492,6 +494,13 @@ instance LogFormatting (TracePeerSelection SockAddr) where
     mconcat [ "kind" .= String "KnownInboundConnection"
             , "peer" .= toJSON addr
             , "peerSharing" .= String (pack . show $ sharing) ]
+  forMachine _dtal (TraceLedgerStateJudgementChanged old new) =
+    mconcat [ "kind" .= String "LedgerStateJudgementChanged"
+            , "old" .= show old
+            , "new" .= show new ]
+  forMachine _dtal (TraceOnlyBootstrapPeers pst) =
+    mconcat [ "kind" .= String "LedgerStateJudgementChanged"
+            , "peerSelectionTargets" .= toJSON pst ]
   forHuman = pack . show
 
 instance MetaTrace (TracePeerSelection SockAddr) where
@@ -593,6 +602,10 @@ instance MetaTrace (TracePeerSelection SockAddr) where
       Namespace [] ["ChurnMode"]
     namespaceFor TraceKnownInboundConnection {} =
       Namespace [] ["KnownInboundConnection"]
+    namespaceFor TraceLedgerStateJudgementChanged {} =
+      Namespace [] ["LedgerStateJudgementChanged"]
+    namespaceFor TraceOnlyBootstrapPeers {} =
+      Namespace [] ["OnlyBootstrapPeers"]
 
     severityFor (Namespace [] ["LocalRootPeersChanged"]) _ = Just Notice
     severityFor (Namespace [] ["TargetsChanged"]) _ = Just Notice
@@ -802,10 +815,10 @@ instance LogFormatting PeerSelectionCounters where
         (fromIntegral hotBigLedgerPeers)
     , IntM
         "Net.PeerSelection.WarmLocalRoots"
-        (fromIntegral $ foldl' (\a (b, _) -> a + b) 0 localRoots)
+        (fromIntegral $ getWarmValency $ foldl' (\a (_, b) -> a + b) 0 localRoots)
     , IntM
         "Net.PeerSelection.HotLocalRoots"
-        (fromIntegral $ foldl' (\a (_, b) -> a + b) 0 localRoots)
+        (fromIntegral $ getHotValency $ foldl' (\a (b, _) -> a + b) 0 localRoots)
     ]
 
 instance MetaTrace PeerSelectionCounters where

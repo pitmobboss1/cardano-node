@@ -25,7 +25,7 @@ import           GHC.Stack
 import           Hedgehog.Extras.Stock.Aeson (rewriteObject)
 import           Hedgehog.Extras.Stock.IO.Network.Sprocket (Sprocket (..))
 import           Hedgehog.Extras.Stock.Time (showUTCTimeSeconds)
-import           Ouroboros.Network.PeerSelection.LedgerPeers (UseLedgerAfter (..))
+import           Ouroboros.Network.PeerSelection.LedgerPeers.Type (UseLedgerPeers (..))
 import           Ouroboros.Network.PeerSelection.RelayAccessPoint (RelayAccessPoint (..))
 import           System.FilePath.Posix ((</>))
 
@@ -33,7 +33,6 @@ import           Cardano.Api hiding (Value)
 
 import qualified Cardano.Node.Configuration.Topology as NonP2P
 import qualified Cardano.Node.Configuration.TopologyP2P as P2P
-import           Cardano.Node.Types (UseLedger (..))
 import qualified Data.Aeson as J
 import qualified Data.HashMap.Lazy as HM
 import qualified Data.List as L
@@ -59,6 +58,8 @@ import           Testnet.Process.Run
 import           Testnet.Property.Assert
 import           Testnet.Property.Utils
 
+import           Ouroboros.Network.PeerSelection.Bootstrap
+import           Ouroboros.Network.PeerSelection.PeerTrustable
 import           Ouroboros.Network.PeerSelection.State.LocalRootPeers (HotValency (..),
                    WarmValency (..))
 
@@ -185,6 +186,7 @@ mkTopologyConfig i numBftNodes' allPorts True = J.encode topologyP2P
         [ P2P.LocalRootPeersGroup rootConfig
                                   (HotValency (numBftNodes' - 1))
                                   (WarmValency (numBftNodes' - 1))
+                                  IsTrustable
         ]
 
     topologyP2P :: P2P.NetworkTopology
@@ -192,7 +194,8 @@ mkTopologyConfig i numBftNodes' allPorts True = J.encode topologyP2P
       P2P.RealNodeTopology
         localRootPeerGroups
         []
-        (UseLedger DontUseLedger)
+        DontUseLedgerPeers
+        DontUseBootstrapPeers
 
 
 testnet :: TestnetOptions -> H.Conf -> H.Integration [String]
