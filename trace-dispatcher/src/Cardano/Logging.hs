@@ -10,6 +10,7 @@ import           Cardano.Logging.Formatter as X
 import           Cardano.Logging.Forwarding as X
 import           Cardano.Logging.FrequencyLimiter as X
 import           Cardano.Logging.Trace as X
+import           Cardano.Logging.TraceDispatcherMessage as X
 import           Cardano.Logging.Tracer.Composed as X
 import           Cardano.Logging.Tracer.DataPoint as X
 import           Cardano.Logging.Tracer.EKG as X
