@@ -38,6 +38,8 @@ common project-config
                         -Wpartial-fields
                         -Wredundant-constraints
                         -Wunused-packages
+                        -fprof-auto
+
 common maybe-Win32
   if os(windows)
     build-depends:      Win32
@@ -211,6 +213,7 @@ executable cardano-node
   main-is:              cardano-node.hs
   ghc-options:          -threaded
                         -rtsopts
+                        -fprof-auto
 
   if arch(arm)
     ghc-options:        "-with-rtsopts=-T -I0 -A16m -N1 --disable-delayed-os-memory-return"
