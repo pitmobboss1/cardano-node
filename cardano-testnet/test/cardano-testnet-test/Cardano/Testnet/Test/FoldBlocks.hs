@@ -67,7 +67,8 @@ prop_foldBlocks = H.integrationRetryWorkspace 2 "foldblocks" $ \tempAbsBasePath'
       -- permanent (= older than the k parameter) blocks created. In
       -- that case we simply restart `foldBlocks` again.
       forever $ do
-        let handler _env _ledgerState _ledgerEvents _blockInCardanoMode _ = IO.putMVar lock ()
+        let handler :: Env -> LedgerState -> [LedgerEvent] -> BlockInMode CardanoMode -> () -> IO ((), FoldStatus)
+            handler _env _ledgerState _ledgerEvents _blockInCardanoMode _ = IO.putMVar lock () >> return ((), ContinueFold)
         e <- runExceptT (C.foldBlocks (File configFile) (C.File socketPathAbs) C.QuickValidation () handler)
         either (throw . FoldBlocksException) (\_ -> pure ()) e
     link a -- Throw async thread's exceptions in main thread
