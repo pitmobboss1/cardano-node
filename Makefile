@@ -26,7 +26,14 @@ host-hlint: ## Run the system (not Nix) version of hlint
 	hlint bench cardano-{api,cli,node,node-capi,node-chairman,submit-api,testnet,tracer}
 
 stylish-haskell: ## Apply stylish-haskell on all *.hs files
-	@find . -type f -name "*.hs" -not -path '.git' -print0 | xargs -0 stylish-haskell -i
+	@SHYAML=`git rev-parse --show-toplevel`/.stylish-haskell.yaml;	\
+	for cabal_file in `git ls-files '*.cabal'`;			\
+	do								\
+		cd `dirname $${cabal_file}`;				\
+		stylish-haskell -c $${SHYAML}				\
+				-i `git ls-files '*.hs' '*.lhs'`	\
+			|| exit $${?};					\
+	done
 
 cabal-hashes:
 	nix run .#checkCabalProject
