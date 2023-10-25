@@ -26,14 +26,47 @@ host-hlint: ## Run the system (not Nix) version of hlint
 	hlint bench cardano-{api,cli,node,node-capi,node-chairman,submit-api,testnet,tracer}
 
 stylish-haskell: ## Apply stylish-haskell on all *.hs files
-	@SHYAML=`git rev-parse --show-toplevel`/.stylish-haskell.yaml;	\
-	for cabal_file in `git ls-files '*.cabal'`;			\
-	do								\
-		cd `dirname $${cabal_file}`;				\
-		stylish-haskell -c $${SHYAML}				\
-				-i `git ls-files '*.hs' '*.lhs'`	\
-			|| exit $${?};					\
-	done
+	@REPO_TOP_DIR=`git rev-parse --show-toplevel`;			\
+	SH_YAML=$${REPO_TOP_DIR}/.stylish-haskell.yaml;			\
+	rc=0;								\
+	eval "exec {rcfd}<> <(:)";					\
+	eval "exec {swpfd}<> <(:)";					\
+	{								\
+		for cabal_file in `git ls-files '*.cabal'`;		\
+		do							\
+			cd $${REPO_TOP_DIR}/`dirname $${cabal_file}`;	\
+			stylish-haskell -c $${SH_YAML}			\
+					-i				\
+					`git ls-files '*.hs' '*.lhs'`;	\
+			shrc=$${?};					\
+			if [ $${shrc} -ne 0 ];				\
+			then						\
+				rc=$${shrc};				\
+				break;					\
+			fi;						\
+		done;							\
+		echo "$${rc}" 1>&$${rcfd};				\
+	} {swpfd}>&1 1>&2 2>&$${swpfd}					\
+	| {								\
+		OLDIFS=$${IFS};						\
+		IFS=":";						\
+		while read fpath rest;					\
+		do							\
+			if git ls-files --error-unmatch			\
+					  "*/$${fpath}"			\
+						> /dev/null 2>&1;	\
+			then						\
+				fpath=`git ls-files			\
+					    --full-name			\
+					    "*/$${fpath}"`;		\
+			fi;						\
+			IFS="$${OLDIFS}";				\
+			echo "$${fpath}:$${rest}";			\
+			IFS=":";					\
+			done;						\
+	  } {swpfd}>&1 1>&2 2>&$${swpfd};				\
+	read -u $${rcfd} rc;						\
+	exit $${rc};
 
 cabal-hashes:
 	nix run .#checkCabalProject
